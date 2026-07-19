@@ -1,0 +1,4 @@
+@import "tailwindcss";
+:root { --brand:#ff5a1f; --ink:#171717; --muted:#666; --paper:#f7f7f5; }
+*{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,"Noto Sans KR",sans-serif}
+a{text-decoration:none;color:inherit}.container{max-width:1180px;margin:auto;padding:0 20px}.brand-gradient{background:linear-gradient(135deg,#ff5a1f,#ff8a3d)}

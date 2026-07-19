@@ -1,0 +1,1 @@
+export function Footer(){return <footer className="border-t bg-neutral-950 py-10 text-neutral-300"><div className="container text-sm"><p className="font-bold text-white">퍼스트철거 | FIRST DEMOLITION</p><p className="mt-2">무료 견적 접수 · 검증업체 경쟁입찰 · 현장 증빙 · 정산 관리</p><p className="mt-5 text-neutral-500">© 2026 First Vibe. Demo MVP.</p></div></footer>}

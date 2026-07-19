@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createAdminClient } from "@/lib/supabase/admin";
+const schema=z.object({name:z.string().min(2),phone:z.string().min(8),address:z.string().min(3),projectType:z.string().min(2),area:z.string().optional(),desiredDate:z.string().optional(),memo:z.string().optional()});
+export async function POST(req:Request){try{const body=schema.parse(await req.json());if(!process.env.NEXT_PUBLIC_SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY){return NextResponse.json({ok:true,demo:true,message:"Demo mode: configure Supabase to persist data."},{status:201})}const supabase=createAdminClient();const {error}=await supabase.from('quote_requests').insert({customer_name:body.name,phone:body.phone,address:body.address,project_type:body.projectType,area_pyeong:body.area?Number(body.area):null,desired_date:body.desiredDate||null,memo:body.memo||null,status:'new',source:'website'});if(error) throw error;return NextResponse.json({ok:true},{status:201})}catch(e){return NextResponse.json({ok:false,error:e instanceof Error?e.message:'unknown error'},{status:400})}}
