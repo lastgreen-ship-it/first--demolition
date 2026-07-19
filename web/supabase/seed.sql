@@ -1,0 +1,1 @@
+insert into public.quote_requests(customer_name,phone,address,project_type,area_pyeong,status,source) values ('김OO','010-0000-1001','서울 노원구','상가 원상복구',42,'bidding','demo'),('박OO','010-0000-1002','경기 성남시','사무실 철거',68,'in_progress','demo'),('이OO','010-0000-1003','서울 강남구','부분 철거',20,'inspection','demo');

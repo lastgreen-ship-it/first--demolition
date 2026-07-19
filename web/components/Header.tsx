@@ -1,0 +1,2 @@
+import Link from "next/link";
+export function Header(){return <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur"><div className="container flex h-16 items-center justify-between"><Link href="/" className="text-xl font-black tracking-tight">FIRST <span className="text-orange-600">DEMOLITION</span></Link><nav className="flex items-center gap-4 text-sm font-semibold"><Link href="/#process">진행절차</Link><Link href="/dashboard">관리자 데모</Link><Link href="/quote" className="rounded-full bg-orange-600 px-4 py-2 text-white">무료 견적</Link></nav></div></header>}
