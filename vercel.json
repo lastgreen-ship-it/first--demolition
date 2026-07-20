@@ -1,0 +1,10 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "dms.firstdemolition.kr" }],
+      "destination": "/admin.html"
+    }
+  ]
+}
