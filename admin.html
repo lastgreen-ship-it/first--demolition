@@ -389,8 +389,9 @@ q('#btnReset').onclick=()=>{['#qN','#qP','#qA','#d1','#d2'].forEach(s=>q(s).valu
 
 /* ── 상담 일정 ── */
 let schScope='전체';
-function addDays(d,n){const t=new Date(d+'T00:00:00');t.setDate(t.getDate()+n);return t.toISOString().slice(0,10)}
-function fmtDate(d){const t=new Date(d+'T00:00:00');const w=['일','월','화','수','목','금','토'][t.getDay()];return `${d.slice(5).replace('-','.')} (${w})`}
+function todayStr(){const t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')}
+function addDays(d,n){const t=new Date(d+'T00:00:00Z');t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10)}
+function fmtDate(d){const t=new Date(d+'T00:00:00Z');const w=['일','월','화','수','목','금','토'][t.getUTCDay()];return `${d.slice(5).replace('-','.')} (${w})`}
 function initSchChips(){
   const items=['전체','지난 미처리','오늘','예정'];
   const wrap=q('#schScope'); if(!wrap)return;
@@ -398,7 +399,7 @@ function initSchChips(){
   wrap.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{schScope=c.dataset.v;initSchChips();renderSchedule()});
 }
 function renderSchedule(){
-  const today=new Date().toISOString().slice(0,10);
+  const today=todayStr();
   const isOver=r=>r.consult_date<today&&['신규','상담중'].includes(r.status||'신규');
   const all=DATA.filter(r=>r.consult_date);
   q('#sToday').textContent=all.filter(r=>r.consult_date===today).length;
@@ -442,7 +443,7 @@ q('#btnSchRefresh').onclick=async()=>{await loadData();renderSchedule()};
 function bar(label,n,max,color){return `<div class="bar"><div class="bl">${label}</div><div class="bt"><div class="bf" style="width:${max?n/max*100:0}%;background:${color}"></div></div><div class="bn">${n}건</div></div>`}
 function renderStats(){
   const total=DATA.length;
-  const today=new Date().toISOString().slice(0,10),mon=today.slice(0,7);
+  const today=todayStr(),mon=today.slice(0,7);
   q('#stAll').textContent=total;
   q('#stMon').textContent=DATA.filter(r=>(r.created_at||'').slice(0,7)===mon).length;
   const deal=DATA.filter(r=>r.status==='계약').length;
@@ -450,8 +451,8 @@ function renderStats(){
   const comps=DATA.map(r=>r.completeness_score).filter(v=>v!=null);
   q('#stComp').textContent=comps.length?Math.round(comps.reduce((a,b)=>a+b,0)/comps.length)+'%':'-';
   // 월별 추이 (최근 6개월)
-  const base=new Date(mon+'-01T00:00:00'),months=[];
-  for(let i=5;i>=0;i--){const t=new Date(base);t.setMonth(t.getMonth()-i);months.push(t.toISOString().slice(0,7))}
+  let [yy,mm]=mon.split('-').map(Number);const months=[];
+  for(let i=5;i>=0;i--){let m=mm-i,y=yy;while(m<=0){m+=12;y--}months.push(y+'-'+String(m).padStart(2,'0'))}
   const mc=months.map(m=>DATA.filter(r=>(r.created_at||'').slice(0,7)===m).length),mmax=Math.max(1,...mc);
   q('#chMonth').innerHTML=months.map((m,i)=>`<div class="col"><div class="cn">${mc[i]}</div><div class="cv" style="height:${mc[i]/mmax*100}%"></div><div class="cx">${+m.slice(5)}월</div></div>`).join('');
   // 상태 분포
