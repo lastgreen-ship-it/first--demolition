@@ -94,6 +94,34 @@
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:10px;font-weight:700;opacity:0;transition:.25s;z-index:80}
 .toast.show{opacity:1}
 @media(max-width:820px){.body{grid-template-columns:1fr}.side{display:none}.tiles{grid-template-columns:1fr 1fr}.mbody{grid-template-columns:1fr}.mcol.l{border-right:0;border-bottom:1px solid var(--line)}}
+/* 상담 일정 */
+.schday{border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff}
+.schday .hd{background:#f3f6fb;padding:9px 14px;font-weight:800;color:var(--navy);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+.schday .hd .cnt{font-size:12px;color:var(--muted);font-weight:700}
+.schday.today .hd{background:#e9f0ff;color:var(--blue)}
+.schday.over .hd{background:#fdecec;color:#b53b3b}
+.tagdate{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;margin-left:8px}
+.tag-today{background:var(--blue);color:#fff}.tag-over{background:var(--bad);color:#fff}.tag-soon{background:var(--warn);color:#fff}
+/* 통계 */
+.scards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){.sgrid{grid-template-columns:1fr}.scards{grid-template-columns:1fr 1fr}}
+.bar{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:12px}
+.bar .bl{width:82px;text-align:right;color:#41506b;font-weight:700;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .bt{flex:1;background:#eef2f8;border-radius:6px;height:20px;overflow:hidden}
+.bar .bf{height:100%;border-radius:6px;min-width:2px;transition:width .5s}
+.bar .bn{width:44px;font-weight:800;color:var(--navy);flex:none;text-align:right}
+.mbar{display:flex;align-items:flex-end;gap:8px;height:170px;padding:10px 4px 0}
+.mbar .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.mbar .cv{width:100%;max-width:42px;background:linear-gradient(180deg,#4d86ff,var(--blue));border-radius:6px 6px 0 0;min-height:3px;transition:height .5s}
+.mbar .cn{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:5px}
+.mbar .cx{font-size:11px;color:var(--muted);margin-top:7px;font-weight:700}
+.funnel{display:flex;flex-direction:column;gap:9px}
+.fstep{display:flex;align-items:center;gap:10px}
+.fstep .fl{width:72px;font-weight:700;color:#41506b;font-size:12px;flex:none}
+.fstep .ft{flex:1;background:#eef2f8;border-radius:6px;height:28px;overflow:hidden}
+.fstep .ff{height:100%;display:flex;align-items:center;padding-left:10px;color:#fff;font-weight:800;font-size:12.5px;border-radius:6px;min-width:38px;transition:width .5s}
+.fstep .fp{width:48px;font-weight:800;color:var(--ok);font-size:12px;flex:none;text-align:right}
 </style>
 </head>
 <body>
@@ -120,14 +148,16 @@
   <div class="body">
     <nav class="side">
       <div class="grp">신청관리</div>
-      <a class="on"><span class="dot"></span>신청 목록</a>
-      <a title="준비중"><span class="dot"></span>상담 일정 <span style="font-size:10px;opacity:.5">(예정)</span></a>
+      <a class="nav on" data-view="list"><span class="dot"></span>신청 목록</a>
+      <a class="nav" data-view="schedule"><span class="dot"></span>상담 일정</a>
       <div class="grp">현황 · 통계</div>
-      <a title="준비중"><span class="dot"></span>월별 신청현황 <span style="font-size:10px;opacity:.5">(예정)</span></a>
+      <a class="nav" data-view="stats"><span class="dot"></span>월별 신청현황</a>
       <div class="grp">설정</div>
       <a title="준비중"><span class="dot"></span>담당자 · 설정 <span style="font-size:10px;opacity:.5">(예정)</span></a>
     </nav>
     <main class="main">
+      <!-- VIEW: 신청 목록 -->
+      <section id="view-list">
       <div class="tiles">
         <div class="tile blue"><small>오늘 신규 신청</small><b id="tToday">-</b></div>
         <div class="tile gold"><small>미상담 (신규)</small><b id="tNew">-</b></div>
@@ -157,6 +187,51 @@
         </div>
         <div class="pager" id="pager"></div>
       </div>
+      </section>
+
+      <!-- VIEW: 상담 일정 -->
+      <section id="view-schedule" style="display:none">
+        <div class="tiles">
+          <div class="tile blue"><small>오늘 상담 예정</small><b id="sToday">-</b></div>
+          <div class="tile gold"><small>7일 내 예정</small><b id="sWeek">-</b></div>
+          <div class="tile"><small>지난 미처리</small><b id="sOver" style="color:var(--bad)">-</b></div>
+          <div class="tile"><small>상담일정 총계</small><b id="sTot">-</b></div>
+        </div>
+        <div class="panel">
+          <div class="phead"><h2>상담 일정 <span id="schCnt"></span></h2>
+            <div class="out"><button class="refresh" id="btnSchRefresh">새로고침</button><span>상담예정일 기준</span></div></div>
+          <div class="filters"><div class="frow"><div class="lab">범위</div><div id="schScope"></div></div></div>
+          <div style="padding:14px 18px" id="schList"></div>
+        </div>
+      </section>
+
+      <!-- VIEW: 월별 신청현황 통계 -->
+      <section id="view-stats" style="display:none">
+        <div class="scards">
+          <div class="tile blue"><small>전체 신청</small><b id="stAll">-</b></div>
+          <div class="tile gold"><small>이번달 신청</small><b id="stMon">-</b></div>
+          <div class="tile ok"><small>계약 전환율</small><b id="stConv">-</b></div>
+          <div class="tile"><small>평균 견적 완성도</small><b id="stComp">-</b></div>
+        </div>
+        <div class="sgrid">
+          <div class="panel">
+            <div class="phead"><h2>월별 신청 추이</h2><div class="out"><span>최근 6개월</span></div></div>
+            <div style="padding:6px 18px 20px"><div class="mbar" id="chMonth"></div></div>
+          </div>
+          <div class="panel">
+            <div class="phead"><h2>진행상태 분포</h2></div>
+            <div style="padding:18px" id="chStatus"></div>
+          </div>
+          <div class="panel">
+            <div class="phead"><h2>업종별 신청</h2></div>
+            <div style="padding:18px" id="chJob"></div>
+          </div>
+          <div class="panel">
+            <div class="phead"><h2>전환 퍼널</h2><div class="out"><span>신청 → 상담 → 계약</span></div></div>
+            <div style="padding:18px"><div class="funnel" id="chFunnel"></div></div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 </div>
@@ -202,8 +277,18 @@ async function boot(){
 function showApp(session){
   q('#login').style.display='none'; q('#app').style.display='grid';
   q('#acct').textContent='🟢 '+(session?.user?.email||'관리자');
-  initChips(); loadData();
+  initChips(); initSchChips(); loadData();
 }
+/* ── 화면 전환 ── */
+function switchView(name){
+  qa('.nav').forEach(a=>a.classList.toggle('on',a.dataset.view===name));
+  q('#view-list').style.display=name==='list'?'':'none';
+  q('#view-schedule').style.display=name==='schedule'?'':'none';
+  q('#view-stats').style.display=name==='stats'?'':'none';
+  if(name==='schedule')renderSchedule();
+  if(name==='stats')renderStats();
+}
+qa('.nav').forEach(a=>a.onclick=()=>switchView(a.dataset.view));
 q('#btnLogin').onclick=login;
 q('#pw').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
 async function login(){
@@ -301,6 +386,86 @@ q('#mSave').onclick=async()=>{
 q('#btnSearch').onclick=()=>{page=1;render()};
 q('#btnReset').onclick=()=>{['#qN','#qP','#qA','#d1','#d2'].forEach(s=>q(s).value='');filt={job:'전체',stat:'전체'};page=1;initChips();render()};
 ['#qN','#qP','#qA'].forEach(s=>q(s).addEventListener('keydown',e=>{if(e.key==='Enter'){page=1;render()}}));
+
+/* ── 상담 일정 ── */
+let schScope='전체';
+function addDays(d,n){const t=new Date(d+'T00:00:00');t.setDate(t.getDate()+n);return t.toISOString().slice(0,10)}
+function fmtDate(d){const t=new Date(d+'T00:00:00');const w=['일','월','화','수','목','금','토'][t.getDay()];return `${d.slice(5).replace('-','.')} (${w})`}
+function initSchChips(){
+  const items=['전체','지난 미처리','오늘','예정'];
+  const wrap=q('#schScope'); if(!wrap)return;
+  wrap.innerHTML=items.map(v=>`<span class="chip ${schScope===v?'on':''}" data-v="${v}">${v}</span>`).join('');
+  wrap.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{schScope=c.dataset.v;initSchChips();renderSchedule()});
+}
+function renderSchedule(){
+  const today=new Date().toISOString().slice(0,10);
+  const isOver=r=>r.consult_date<today&&['신규','상담중'].includes(r.status||'신규');
+  const all=DATA.filter(r=>r.consult_date);
+  q('#sToday').textContent=all.filter(r=>r.consult_date===today).length;
+  q('#sWeek').textContent=all.filter(r=>r.consult_date>=today&&r.consult_date<=addDays(today,7)).length;
+  q('#sOver').textContent=all.filter(isOver).length;
+  q('#sTot').textContent=all.length;
+  let list=all.slice();
+  if(schScope==='지난 미처리')list=list.filter(isOver);
+  else if(schScope==='오늘')list=list.filter(r=>r.consult_date===today);
+  else if(schScope==='예정')list=list.filter(r=>r.consult_date>=today);
+  list.sort((a,b)=>a.consult_date<b.consult_date?-1:a.consult_date>b.consult_date?1:0);
+  q('#schCnt').textContent=`총 ${list.length} 건`;
+  const groups={};
+  list.forEach(r=>{(groups[r.consult_date]=groups[r.consult_date]||[]).push(r)});
+  const dates=Object.keys(groups).sort();
+  if(!dates.length){q('#schList').innerHTML='<div class="empty">상담 예정일이 지정된 신청이 없습니다.<br><span style="font-size:11px">신청 상세에서 "상담 예정일"을 지정하면 여기에 표시됩니다.</span></div>';return}
+  q('#schList').innerHTML=dates.map(d=>{
+    const rows=groups[d], over=d<today, isToday=d===today;
+    const cls=isToday?'today':(over?'over':'');
+    const tag=isToday?'<span class="tagdate tag-today">오늘</span>':(over?'<span class="tagdate tag-over">지남</span>':'<span class="tagdate tag-soon">예정</span>');
+    return `<div class="schday ${cls}">
+      <div class="hd"><span>${fmtDate(d)}${tag}</span><span class="cnt">${rows.length}건</span></div>
+      <div style="overflow:auto"><table class="tbl"><tbody>
+      ${rows.map(r=>`<tr>
+        <td class="rno">${r.receipt_no||'-'}</td>
+        <td class="lft">${r.space||'-'} · ${r.address||''}</td>
+        <td>${r.name||'-'}</td>
+        <td>${r.phone||'-'}</td>
+        <td>${r.assignee||'<span style="color:#b8c2d4">미지정</span>'}</td>
+        <td><span class="badge b-${r.status||'신규'}">${r.status||'신규'}</span></td>
+        <td><button class="det" data-id="${r.id}">상세</button></td>
+      </tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+  }).join('');
+  q('#schList').querySelectorAll('.det').forEach(b=>b.onclick=()=>openDetail(b.dataset.id));
+}
+q('#btnSchRefresh').onclick=async()=>{await loadData();renderSchedule()};
+
+/* ── 월별 통계 ── */
+function bar(label,n,max,color){return `<div class="bar"><div class="bl">${label}</div><div class="bt"><div class="bf" style="width:${max?n/max*100:0}%;background:${color}"></div></div><div class="bn">${n}건</div></div>`}
+function renderStats(){
+  const total=DATA.length;
+  const today=new Date().toISOString().slice(0,10),mon=today.slice(0,7);
+  q('#stAll').textContent=total;
+  q('#stMon').textContent=DATA.filter(r=>(r.created_at||'').slice(0,7)===mon).length;
+  const deal=DATA.filter(r=>r.status==='계약').length;
+  q('#stConv').textContent=total?(deal/total*100).toFixed(1)+'%':'0%';
+  const comps=DATA.map(r=>r.completeness_score).filter(v=>v!=null);
+  q('#stComp').textContent=comps.length?Math.round(comps.reduce((a,b)=>a+b,0)/comps.length)+'%':'-';
+  // 월별 추이 (최근 6개월)
+  const base=new Date(mon+'-01T00:00:00'),months=[];
+  for(let i=5;i>=0;i--){const t=new Date(base);t.setMonth(t.getMonth()-i);months.push(t.toISOString().slice(0,7))}
+  const mc=months.map(m=>DATA.filter(r=>(r.created_at||'').slice(0,7)===m).length),mmax=Math.max(1,...mc);
+  q('#chMonth').innerHTML=months.map((m,i)=>`<div class="col"><div class="cn">${mc[i]}</div><div class="cv" style="height:${mc[i]/mmax*100}%"></div><div class="cx">${+m.slice(5)}월</div></div>`).join('');
+  // 상태 분포
+  const smax=Math.max(1,...STAT.map(s=>DATA.filter(r=>(r.status||'신규')===s).length));
+  q('#chStatus').innerHTML=STAT.map(s=>bar(s,DATA.filter(r=>(r.status||'신규')===s).length,smax,statColor(s))).join('');
+  // 업종별
+  const jobs={};DATA.forEach(r=>{const j=r.space||'기타';jobs[j]=(jobs[j]||0)+1});
+  const je=Object.entries(jobs).sort((a,b)=>b[1]-a[1]),jmax=Math.max(1,...je.map(x=>x[1]));
+  q('#chJob').innerHTML=je.length?je.map(([j,n])=>bar(j,n,jmax,'#2767ff')).join(''):'<div class="empty">데이터 없음</div>';
+  // 전환 퍼널
+  const consulted=DATA.filter(r=>['상담중','계약'].includes(r.status)).length;
+  const steps=[['전체 신청',total,'#2767ff'],['상담 진행',consulted,'#ef9f25'],['계약 완료',deal,'#10a878']];
+  q('#chFunnel').innerHTML=steps.map(([l,n,c])=>{const w=total?Math.max(n/total*100,6):6,p=total?(n/total*100).toFixed(0):0;return `<div class="fstep"><div class="fl">${l}</div><div class="ft"><div class="ff" style="width:${w}%;background:${c}">${n}</div></div><div class="fp">${p}%</div></div>`}).join('');
+}
 
 boot();
 </script>
