@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>퍼스트철거 | 입찰 비교·업체 선택</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#071a34;--navy2:#0d2d5d;--blue:#2767ff;--gold:#f3c75d;--ink:#14233e;--muted:#6e7890;--line:#e3e9f3;--bg:#f4f7fb;--ok:#10a878;--warn:#ef9f25;--bad:#e25555}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%}body{font-family:Pretendard,"Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+.top{background:linear-gradient(90deg,#06162e,#0d2d5d);color:#fff;padding:0 16px;height:58px;display:flex;align-items:center}
+.top .brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:17px}
+.top .mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(145deg,var(--gold),#ffe7a3);display:grid;place-items:center;color:var(--navy);font-weight:950}
+.wrap{max-width:760px;margin:auto;padding:18px 16px 60px}
+.hero{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 8px 26px rgba(11,32,63,.06);margin-bottom:16px}
+.hero h1{margin:0 0 4px;font-size:20px}
+.hero .sub{color:var(--muted);font-size:13px}
+.info{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:14px}
+.info .it{background:#f7faff;border:1px solid #e6eefb;border-radius:11px;padding:10px 12px}
+.info .it small{color:var(--muted);display:block;margin-bottom:3px;font-size:11.5px}
+.info .it b{font-size:14px;color:var(--navy)}
+.sec{font-weight:900;font-size:16px;margin:22px 4px 12px;display:flex;align-items:center;gap:8px}
+.sec .cnt{font-size:13px;color:var(--muted);font-weight:700}
+.card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:17px 18px;box-shadow:0 6px 18px rgba(11,32,63,.05);margin-bottom:12px;position:relative}
+.card.best{border-color:var(--gold);box-shadow:0 8px 24px rgba(243,199,93,.28)}
+.card .rank{position:absolute;top:-9px;left:16px;background:var(--gold);color:var(--navy);font-weight:900;font-size:11px;padding:3px 10px;border-radius:999px}
+.card .name{font-weight:900;font-size:16px;color:var(--navy)}
+.card .price{font-size:26px;font-weight:950;color:var(--navy);margin:8px 0 2px}
+.card .meta{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:12.5px;margin:6px 0}
+.card .note{background:#f7f9fc;border-radius:10px;padding:9px 12px;font-size:12.5px;margin:9px 0;line-height:1.55}
+.card .pick{width:100%;background:var(--navy);color:#fff;border:0;border-radius:11px;padding:13px;font-weight:800;font-size:14px;cursor:pointer;margin-top:8px}
+.card .pick:hover{background:var(--navy2)}
+.card.chosen{border-color:var(--ok)}
+.won{background:#eafaf3;border:1px solid #b6ebd3;border-radius:10px;padding:10px 13px;color:var(--ok);font-weight:800;margin-top:8px;text-align:center}
+.confirm{background:#fff8ec;border:1px solid #f2dca6;border-radius:11px;padding:12px;margin-top:8px}
+.confirm p{margin:0 0 9px;font-weight:700;font-size:13px}
+.confirm .row{display:flex;gap:8px}
+.confirm .yes{flex:1;background:var(--ok);color:#fff;border:0;border-radius:9px;padding:11px;font-weight:800;cursor:pointer}
+.confirm .no{flex:1;background:#eef1f6;border:0;border-radius:9px;padding:11px;font-weight:800;cursor:pointer;color:var(--ink)}
+.state{background:#fff;border:1px solid var(--line);border-radius:15px;padding:40px 22px;text-align:center;color:var(--muted);box-shadow:0 6px 18px rgba(11,32,63,.05)}
+.state .ic{font-size:34px;margin-bottom:10px}
+.awardedTop{background:#eafaf3;border:1px solid #b6ebd3;border-radius:12px;padding:12px 15px;margin-bottom:14px;color:var(--ok);font-weight:800}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:10px;font-weight:700;opacity:0;transition:.25s;z-index:80}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><div class="mark">F</div>퍼스트철거</div></header>
+<div class="wrap">
+  <div id="content"><div class="state"><div class="ic">⏳</div>불러오는 중…</div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL='https://losdjgpghhsdybxhbnex.supabase.co';
+const SUPABASE_KEY='sb_publishable_wvPbmI33RF121dFuY-4tjg_b7c-YDmG';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const q=s=>document.querySelector(s);
+const token=new URLSearchParams(location.search).get('token');
+let DATAOBJ=null, pendingBid=null;
+function toast(m){const t=q('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function scopeText(s){return Array.isArray(s)?s.join('·'):(s||'-')}
+function won(n){return (n==null||n==='')?'견적 협의':Number(n).toLocaleString()+'만원'}
+function stars(r){r=Number(r)||0;const f=Math.round(r);return r?('★'.repeat(f)+'☆'.repeat(Math.max(0,5-f))+' '+r.toFixed(1)):''}
+
+async function load(){
+  if(!token){ q('#content').innerHTML='<div class="state"><div class="ic">🔗</div>유효하지 않은 접근입니다.<br>문자로 받은 링크로 다시 들어와 주세요.</div>'; return }
+  const {data,error}=await sb.rpc('customer_bids',{p_token:token});
+  if(error){ q('#content').innerHTML=`<div class="state"><div class="ic">⚠️</div>불러오기 실패<br><span style="font-size:12px">${error.message}</span></div>`; return }
+  if(!data){ q('#content').innerHTML='<div class="state"><div class="ic">🔗</div>링크가 만료되었거나 잘못되었습니다.</div>'; return }
+  DATAOBJ=data; render();
+}
+function render(){
+  const e=DATAOBJ.estimate, bids=DATAOBJ.bids||[];
+  const awarded=e.awarded_bid_id;
+  let html=`<div class="hero">
+    <h1>받은 견적 비교</h1>
+    <div class="sub">접수번호 ${e.receipt_no||'-'} · 마음에 드는 업체를 선택하시면 퍼스트철거가 바로 연결해 드립니다.</div>
+    <div class="info">
+      <div class="it"><small>업종</small><b>${e.space||'-'}</b></div>
+      <div class="it"><small>지역</small><b>${e.address||'-'}</b></div>
+      <div class="it"><small>평수</small><b>${e.area||'-'}</b></div>
+      <div class="it"><small>철거범위</small><b>${scopeText(e.scope)}</b></div>
+      <div class="it"><small>AI 참고견적</small><b>${e.price_text||'-'}</b></div>
+    </div>
+  </div>`;
+
+  if(awarded){
+    const w=bids.find(b=>b.id===awarded);
+    html+=`<div class="awardedTop">✔ 이미 <b>${w?w.company_name:'선택한 업체'}</b> 로 선택 완료되었습니다. 퍼스트철거에서 곧 연락드립니다.</div>`;
+  }
+  if(!bids.length){
+    html+=`<div class="state"><div class="ic">📩</div>아직 도착한 입찰이 없습니다.<br>업체들이 입찰하면 이 화면에 표시됩니다.</div>`;
+    q('#content').innerHTML=html; return;
+  }
+  html+=`<div class="sec">입찰한 업체 <span class="cnt">${bids.length}곳 · 금액순</span></div>`;
+  bids.forEach((b,i)=>{
+    const isWon=b.status==='낙찰', isBest=i===0&&!awarded;
+    let action='';
+    if(awarded){ action= isWon?'<div class="won">✔ 선택한 업체입니다</div>':''; }
+    else if(pendingBid===b.id){
+      action=`<div class="confirm"><p>${b.company_name} 업체로 선택하시겠어요? 선택 후에는 변경이 어렵습니다.</p><div class="row"><button class="yes" data-yes="${b.id}">네, 이 업체로 선택</button><button class="no" data-no="1">취소</button></div></div>`;
+    } else {
+      action=`<button class="pick" data-pick="${b.id}">이 업체로 선택</button>`;
+    }
+    html+=`<div class="card ${isBest?'best':''} ${isWon?'chosen':''}">
+      ${isBest?'<span class="rank">최저가</span>':''}
+      <div class="name">${b.company_name||'업체'} ${b.rating?`<span style="color:var(--gold);font-size:12px;font-weight:800">${stars(b.rating)}</span>`:''}</div>
+      <div class="price">${won(b.amount)}</div>
+      <div class="meta"><span>⏱ 공사기간 ${b.duration||'협의'}</span></div>
+      ${b.scope_note?`<div class="note"><b>범위</b> · ${b.scope_note}</div>`:''}
+      ${b.memo?`<div class="note">${b.memo}</div>`:''}
+      ${action}
+    </div>`;
+  });
+  q('#content').innerHTML=html;
+  q('#content').querySelectorAll('[data-pick]').forEach(btn=>btn.onclick=()=>{pendingBid=btn.dataset.pick;render()});
+  q('#content').querySelectorAll('[data-no]').forEach(btn=>btn.onclick=()=>{pendingBid=null;render()});
+  q('#content').querySelectorAll('[data-yes]').forEach(btn=>btn.onclick=()=>award(btn.dataset.yes));
+}
+async function award(bidId){
+  const {error}=await sb.rpc('customer_award',{p_token:token,p_bid_id:bidId});
+  if(error){toast('선택 실패: '+error.message);return}
+  pendingBid=null; toast('업체가 선택되었습니다'); await load();
+}
+load();
+</script>
+</body>
+</html>

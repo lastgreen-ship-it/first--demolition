@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>퍼스트철거 파트너 · 시공사 입찰</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#071a34;--navy2:#0d2d5d;--blue:#2767ff;--gold:#f3c75d;--ink:#14233e;--muted:#6e7890;--line:#e2e8f2;--bg:#eef2f8;--card:#fff;--ok:#10a878;--warn:#ef9f25;--bad:#e25555;--gray:#9aa5b5}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%}body{font-family:Pretendard,"Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:13px}
+/* gate */
+#gate{min-height:100vh;display:grid;place-items:center;background:linear-gradient(120deg,#06162e,#0d2d5d);padding:20px}
+.gbox{background:#fff;border-radius:18px;padding:30px 28px;width:min(440px,94vw);box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.gmark{width:52px;height:52px;border-radius:14px;background:linear-gradient(145deg,var(--gold),#ffe7a3);display:grid;place-items:center;color:var(--navy);font-weight:950;font-size:22px;margin:0 auto 12px}
+.gbox h1{text-align:center;margin:0 0 3px;font-size:21px}.gbox .sub{text-align:center;color:var(--muted);font-size:12px;margin-bottom:18px}
+.segs{display:flex;background:#eef2f8;border-radius:11px;padding:4px;margin-bottom:16px}
+.segs button{flex:1;border:0;background:transparent;padding:9px;font-weight:800;font-size:13px;border-radius:8px;cursor:pointer;color:var(--muted)}
+.segs button.on{background:#fff;color:var(--navy);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+label.f{display:block;font-weight:800;font-size:12px;margin:12px 0 5px}
+.gbox input,.gbox select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 11px;font:inherit}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer}
+.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.gbtn{width:100%;margin-top:18px;background:var(--navy);color:#fff;border:0;border-radius:11px;padding:13px;font-weight:800;font-size:14px;cursor:pointer}
+.gbtn:hover{background:var(--navy2)}.gbtn:disabled{opacity:.6}
+.gerr{color:var(--bad);font-size:12px;margin-top:11px;text-align:center;min-height:16px}
+.gok{color:var(--ok);font-size:12.5px;margin-top:11px;text-align:center}
+/* app */
+#app{display:none;grid-template-rows:52px 1fr;min-height:100vh}
+.top{background:linear-gradient(90deg,#06162e,#0d2d5d);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+.top .brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:16px}
+.top .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(145deg,var(--gold),#ffe7a3);display:grid;place-items:center;color:var(--navy);font-weight:950}
+.top .right{display:flex;align-items:center;gap:10px;font-size:12px}
+.top a.home{color:#c9d6ec;text-decoration:none;font-weight:700}
+.top button{border:0;border-radius:8px;padding:7px 12px;font-weight:800;font-size:12px;cursor:pointer;background:var(--gold);color:var(--navy)}
+.main{max-width:1080px;margin:auto;padding:16px 16px 50px;width:100%}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs .t{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 16px;font-weight:800;cursor:pointer;color:var(--ink)}
+.tabs .t.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.notice{background:#fff;border:1px solid var(--line);border-radius:14px;padding:34px 24px;text-align:center;box-shadow:0 8px 26px rgba(11,32,63,.06)}
+.notice .ic{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;font-size:28px}
+.notice.wait .ic{background:#fff6e3;color:var(--warn)}.notice.bad .ic{background:#fdecec;color:var(--bad)}
+.notice h2{margin:0 0 8px;font-size:19px}.notice p{color:var(--muted);margin:4px 0;line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.bcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 16px;box-shadow:0 6px 18px rgba(11,32,63,.05)}
+.bcard .hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.bcard .rno{font-weight:900;color:var(--navy);font-size:14px}
+.bcard .tag{font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:#eef2f8;color:var(--muted)}
+.bcard .kv{display:grid;grid-template-columns:74px 1fr;gap:4px 8px;font-size:12.5px;margin:8px 0}
+.bcard .kv .k{color:var(--muted);font-weight:700}.bcard .kv .v{font-weight:600}
+.bcard .est{background:#f7faff;border:1px solid #e6eefb;border-radius:10px;padding:8px 11px;margin:8px 0;font-weight:800;color:var(--navy)}
+.bcard .foot{display:flex;gap:7px;margin-top:10px}
+.bcard .bidbtn{flex:1;background:var(--blue);color:#fff;border:0;border-radius:9px;padding:10px;font-weight:800;cursor:pointer}
+.bcard .bidbtn.re{background:#eef2f8;color:var(--navy)}
+.mine{border:1px solid #d9e6ff;background:#f2f7ff;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;color:var(--blue);margin-top:8px}
+.badge{display:inline-block;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:800;color:#fff}
+.b-입찰{background:var(--blue)}.b-낙찰{background:var(--ok)}.b-미낙찰{background:var(--gray)}.b-철회{background:var(--gray)}
+.won{background:#eafaf3;border:1px solid #b6ebd3;border-radius:10px;padding:11px 13px;margin-top:9px}
+.won b{color:var(--ok)}
+.empty{padding:40px;text-align:center;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:14px}
+.mask{position:fixed;inset:0;background:rgba(7,20,40,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
+.mask.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:min(500px,100%);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--line)}
+.mhead h3{margin:0;font-size:16px}.mhead .x{border:0;background:#eef1f6;border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer}
+.mbody{padding:16px 18px}
+.mbody .field{margin-bottom:12px}.mbody label{display:block;font-weight:800;font-size:12px;margin-bottom:5px}
+.mbody input,.mbody textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 10px;font:inherit}
+.mbody textarea{height:60px;resize:vertical}
+.refbox{background:#f7faff;border:1px solid #e6eefb;border-radius:9px;padding:9px 11px;font-size:12px;margin-bottom:12px}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid var(--line)}
+.mfoot .save{background:var(--blue);color:#fff;border:0;border-radius:9px;padding:10px 20px;font-weight:800;cursor:pointer}.mfoot .save:disabled{opacity:.6}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:10px;font-weight:700;opacity:0;transition:.25s;z-index:80}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- 로그인 / 회원가입 -->
+<div id="gate">
+  <div class="gbox">
+    <div class="gmark">F</div>
+    <h1>퍼스트철거 파트너</h1>
+    <div class="sub">시공사 입찰 · 철거/폐업 비교입찰 플랫폼</div>
+    <div class="segs">
+      <button id="segLogin" class="on">로그인</button>
+      <button id="segSignup">회원가입</button>
+    </div>
+
+    <div id="paneLogin">
+      <label class="f">이메일</label><input id="liEmail" type="email" placeholder="company@email.com" autocomplete="username">
+      <label class="f">비밀번호</label><input id="liPw" type="password" placeholder="비밀번호" autocomplete="current-password">
+      <button class="gbtn" id="btnLogin">로그인</button>
+    </div>
+
+    <div id="paneSignup" style="display:none">
+      <label class="f">업체명 *</label><input id="suCompany" placeholder="예) 퍼스트건설">
+      <div class="row2">
+        <div><label class="f">사업자등록번호</label><input id="suBiz" placeholder="000-00-00000"></div>
+        <div><label class="f">담당자</label><input id="suManager" placeholder="담당자명"></div>
+      </div>
+      <label class="f">연락처</label><input id="suPhone" placeholder="010-0000-0000" inputmode="numeric">
+      <label class="f">활동 지역 (쉼표로 구분)</label><input id="suRegions" placeholder="서울, 경기, 인천">
+      <label class="f">가능 업종</label><div class="chips" id="suCats"></div>
+      <label class="f">이메일 *</label><input id="suEmail" type="email" placeholder="company@email.com" autocomplete="username">
+      <label class="f">비밀번호 * (6자 이상)</label><input id="suPw" type="password" placeholder="비밀번호" autocomplete="new-password">
+      <button class="gbtn" id="btnSignup">가입 신청</button>
+    </div>
+    <div class="gerr" id="gerr"></div>
+    <div class="gok" id="gok"></div>
+  </div>
+</div>
+
+<!-- 앱 -->
+<div id="app">
+  <header class="top">
+    <div class="brand"><div class="mark">F</div>퍼스트철거 파트너</div>
+    <div class="right"><a class="home" href="/">고객 사이트</a><span id="acct">🟢 -</span><button id="btnLogout">로그아웃</button></div>
+  </header>
+  <div class="main">
+    <!-- 상태별 뷰 -->
+    <div id="viewRegister" style="display:none"></div>
+    <div id="viewWait" style="display:none"></div>
+    <div id="viewApp" style="display:none">
+      <div class="tabs">
+        <button class="t on" data-v="open">입찰 가능 건 <span id="openCnt"></span></button>
+        <button class="t" data-v="mine">내 입찰 <span id="mineCnt"></span></button>
+      </div>
+      <div id="tabOpen"><div class="grid" id="openGrid"></div></div>
+      <div id="tabMine" style="display:none"><div class="grid" id="mineGrid"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 입찰 모달 -->
+<div class="mask" id="mask">
+  <div class="modal">
+    <div class="mhead"><h3 id="mTitle">입찰하기</h3><button class="x" id="mClose">×</button></div>
+    <div class="mbody">
+      <div class="refbox" id="mRef"></div>
+      <div class="field"><label>입찰 금액 (만원) *</label><input id="mAmount" type="number" inputmode="numeric" placeholder="예) 380"></div>
+      <div class="field"><label>예상 공사기간</label><input id="mDuration" placeholder="예) 2~3일"></div>
+      <div class="field"><label>포함 / 불포함 항목</label><textarea id="mScope" placeholder="예) 폐기물 반출 포함 / 석면 처리 별도"></textarea></div>
+      <div class="field"><label>코멘트</label><textarea id="mMemo" placeholder="고객에게 전달할 메모"></textarea></div>
+    </div>
+    <div class="mfoot"><button class="save" id="mSave">입찰 제출</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL='https://losdjgpghhsdybxhbnex.supabase.co';
+const SUPABASE_KEY='sb_publishable_wvPbmI33RF121dFuY-4tjg_b7c-YDmG';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const q=s=>document.querySelector(s),qa=s=>[...document.querySelectorAll(s)];
+const CATS=['카페·음식점','사무실','학원','병원·미용','일반상가','기타'];
+let selCats=[], curEst=null, ME=null;
+function toast(m){const t=q('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function err(m){q('#gerr').textContent=m||'';q('#gok').textContent=''}
+function okmsg(m){q('#gok').textContent=m||'';q('#gerr').textContent=''}
+function scopeText(s){return Array.isArray(s)?s.join('·'):(s||'-')}
+function won(n){return (n==null||n==='')?'-':Number(n).toLocaleString()+'만원'}
+
+/* 업종 칩 */
+q('#suCats').innerHTML=CATS.map(c=>`<span class="chip" data-c="${c}">${c}</span>`).join('');
+q('#suCats').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{const v=c.dataset.c;c.classList.toggle('on');selCats=selCats.includes(v)?selCats.filter(x=>x!==v):[...selCats,v]});
+
+/* 세그먼트 */
+q('#segLogin').onclick=()=>{q('#segLogin').classList.add('on');q('#segSignup').classList.remove('on');q('#paneLogin').style.display='';q('#paneSignup').style.display='none';err('')};
+q('#segSignup').onclick=()=>{q('#segSignup').classList.add('on');q('#segLogin').classList.remove('on');q('#paneSignup').style.display='';q('#paneLogin').style.display='none';err('')};
+
+/* 인증 */
+async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(session) enterApp(session); else showGate();
+}
+function showGate(){q('#gate').style.display='grid';q('#app').style.display='none'}
+q('#btnLogin').onclick=async()=>{
+  err(''); const email=q('#liEmail').value.trim(),password=q('#liPw').value;
+  if(!email||!password){err('이메일과 비밀번호를 입력하세요.');return}
+  const b=q('#btnLogin');b.disabled=true;b.textContent='로그인 중…';
+  const {data,error}=await sb.auth.signInWithPassword({email,password});
+  b.disabled=false;b.textContent='로그인';
+  if(error){err(error.message==='Invalid login credentials'?'이메일 또는 비밀번호가 올바르지 않습니다.':(error.message==='Email not confirmed'?'이메일 인증이 필요합니다. 메일함을 확인해주세요.':error.message));return}
+  enterApp(data.session);
+};
+q('#btnSignup').onclick=async()=>{
+  err('');
+  const company=q('#suCompany').value.trim(), email=q('#suEmail').value.trim(), pw=q('#suPw').value;
+  if(!company){err('업체명을 입력하세요.');return}
+  if(!email||pw.length<6){err('이메일과 6자 이상 비밀번호를 입력하세요.');return}
+  const b=q('#btnSignup');b.disabled=true;b.textContent='가입 처리 중…';
+  const reg={p_company:company,p_biz_no:q('#suBiz').value.trim(),p_manager:q('#suManager').value.trim(),p_phone:q('#suPhone').value.trim(),p_email:email,p_regions:q('#suRegions').value.split(',').map(s=>s.trim()).filter(Boolean),p_categories:selCats};
+  const {data,error}=await sb.auth.signUp({email,password:pw});
+  if(error){b.disabled=false;b.textContent='가입 신청';err(error.message);return}
+  if(data.session){ // 자동 확인 → 프로필 생성
+    const {error:e2}=await sb.rpc('register_contractor',reg);
+    b.disabled=false;b.textContent='가입 신청';
+    if(e2){err('프로필 저장 실패: '+e2.message);return}
+    enterApp(data.session);
+  } else { // 이메일 인증 필요
+    window.__pendingReg=reg;
+    b.disabled=false;b.textContent='가입 신청';
+    okmsg('가입 요청 완료. 이메일 인증 후 로그인하면 등록이 마무리됩니다.');
+  }
+};
+q('#btnLogout').onclick=async()=>{await sb.auth.signOut();location.reload()};
+
+async function enterApp(session){
+  q('#gate').style.display='none';q('#app').style.display='grid';
+  q('#acct').textContent='🟢 '+(session?.user?.email||'');
+  const {data:me}=await sb.rpc('my_contractor');
+  ME=me;
+  // 이메일 인증 후 최초 로그인인데 프로필 없고 pendingReg가 있으면 생성
+  if(!ME && window.__pendingReg){
+    const {data:created}=await sb.rpc('register_contractor',window.__pendingReg);
+    window.__pendingReg=null; ME=created;
+  }
+  route();
+}
+function hideViews(){['viewRegister','viewWait','viewApp'].forEach(id=>q('#'+id).style.display='none')}
+function route(){
+  hideViews();
+  if(!ME){ renderRegister(); return }
+  if(ME.status==='승인'){ q('#viewApp').style.display=''; switchTab('open'); loadOpen(); loadMine(); return }
+  if(ME.status==='거절'||ME.status==='정지'){ renderNotice('bad', ME.status==='거절'?'⛔':'⏸', '이용이 제한되었습니다', ['현재 계정 상태: '+ME.status,'문의가 필요하면 퍼스트철거로 연락 주세요.']); return }
+  renderNotice('wait','⏳','승인 대기 중입니다', ['가입이 접수되었습니다. 담당자 검토 후 승인되면 입찰 기능이 열립니다.','업체명: '+(ME.company_name||'-')]);
+}
+function renderNotice(cls,ic,title,lines){
+  const v=q('#viewWait'); v.style.display='';
+  v.innerHTML=`<div class="notice ${cls}"><div class="ic">${ic}</div><h2>${title}</h2>${lines.map(l=>`<p>${l}</p>`).join('')}</div>`;
+}
+/* 프로필 미등록(인증만 됨) → 업체정보 등록 폼 */
+function renderRegister(){
+  const v=q('#viewRegister'); v.style.display='';
+  v.innerHTML=`<div class="notice"><div class="ic" style="background:#eef2ff;color:var(--blue)">📝</div>
+    <h2>업체 정보를 등록해주세요</h2><p>입찰에 참여하려면 업체 정보 등록 후 관리자 승인이 필요합니다.</p></div>
+    <div class="bcard" style="max-width:480px;margin:14px auto 0">
+      <label class="f">업체명 *</label><input id="rgCompany" placeholder="업체명">
+      <div class="row2" style="margin-top:8px"><div><label class="f">사업자번호</label><input id="rgBiz" placeholder="000-00-00000"></div><div><label class="f">담당자</label><input id="rgManager" placeholder="담당자"></div></div>
+      <label class="f" style="margin-top:8px">연락처</label><input id="rgPhone" placeholder="010-">
+      <label class="f" style="margin-top:8px">활동 지역(쉼표)</label><input id="rgRegions" placeholder="서울, 경기">
+      <button class="gbtn" id="rgSave" style="background:var(--blue)">등록하고 승인 요청</button>
+    </div>`;
+  // reuse chip styles inline
+  qa('#viewRegister input').forEach(i=>{i.style.width='100%';i.style.border='1px solid var(--line)';i.style.borderRadius='9px';i.style.padding='9px 10px';i.style.font='inherit'});
+  q('#rgSave').onclick=async()=>{
+    const c=q('#rgCompany').value.trim(); if(!c){toast('업체명을 입력하세요');return}
+    const btn=q('#rgSave');btn.disabled=true;btn.textContent='등록 중…';
+    const {data,error}=await sb.rpc('register_contractor',{p_company:c,p_biz_no:q('#rgBiz').value.trim(),p_manager:q('#rgManager').value.trim(),p_phone:q('#rgPhone').value.trim(),p_email:(await sb.auth.getUser()).data.user?.email,p_regions:q('#rgRegions').value.split(',').map(s=>s.trim()).filter(Boolean),p_categories:[]});
+    btn.disabled=false;btn.textContent='등록하고 승인 요청';
+    if(error){toast('저장 실패: '+error.message);return}
+    ME=data; route();
+  };
+}
+
+/* 탭 */
+function switchTab(v){
+  qa('.tabs .t').forEach(t=>t.classList.toggle('on',t.dataset.v===v));
+  q('#tabOpen').style.display=v==='open'?'':'none';
+  q('#tabMine').style.display=v==='mine'?'':'none';
+}
+qa('.tabs .t').forEach(t=>t.onclick=()=>switchTab(t.dataset.v));
+
+/* 입찰 가능 건 */
+async function loadOpen(){
+  q('#openGrid').innerHTML='<div class="empty">불러오는 중…</div>';
+  const {data,error}=await sb.rpc('open_estimates');
+  if(error){q('#openGrid').innerHTML=`<div class="empty">조회 실패: ${error.message}</div>`;return}
+  const list=data||[]; q('#openCnt').textContent=list.length?`(${list.length})`:'';
+  if(!list.length){q('#openGrid').innerHTML='<div class="empty">현재 입찰 모집 중인 건이 없습니다.</div>';return}
+  q('#openGrid').innerHTML=list.map(e=>{
+    const mine=e.my_bid;
+    return `<div class="bcard">
+      <div class="hd"><span class="rno">${e.receipt_no||'-'}</span><span class="tag">${(e.created_at||'').slice(0,10)}</span></div>
+      <div class="kv">
+        <div class="k">업종</div><div class="v">${e.space||'-'}</div>
+        <div class="k">지역</div><div class="v">${e.address||'-'}</div>
+        <div class="k">평수</div><div class="v">${e.area||'-'}</div>
+        <div class="k">철거범위</div><div class="v">${scopeText(e.scope)}</div>
+        <div class="k">희망일정</div><div class="v">${e.schedule_date||'-'}</div>
+        <div class="k">현장난이도</div><div class="v">${e.difficulty||'-'} · 사진 ${e.photo_count||0}장</div>
+      </div>
+      <div class="est">AI 참고견적 ${e.price_text||'-'} · 완성도 ${e.completeness_score!=null?e.completeness_score+'%':'-'}</div>
+      ${mine?`<div class="mine">내 입찰: ${won(mine.amount)} · ${mine.status}</div>`:''}
+      <div class="foot"><button class="bidbtn ${mine?'re':''}" data-id="${e.id}">${mine?'입찰 수정':'입찰하기'}</button></div>
+    </div>`;
+  }).join('');
+  q('#openGrid').querySelectorAll('.bidbtn').forEach(b=>b.onclick=()=>openBid(list.find(x=>x.id===b.dataset.id)));
+}
+
+/* 입찰 모달 */
+function openBid(e){
+  if(!e)return; curEst=e;
+  q('#mTitle').textContent=`입찰 · ${e.receipt_no||''}`;
+  q('#mRef').innerHTML=`${e.space||''} · ${e.address||''} · ${e.area||''} · ${scopeText(e.scope)}<br>AI 참고견적 <b>${e.price_text||'-'}</b>`;
+  const mine=e.my_bid;
+  q('#mAmount').value=mine?.amount??''; q('#mDuration').value=mine?.duration||e.duration||''; q('#mScope').value=mine?.scope_note||''; q('#mMemo').value=mine?.memo||'';
+  q('#mask').classList.add('open');
+}
+q('#mClose').onclick=()=>q('#mask').classList.remove('open');
+q('#mask').onclick=e=>{if(e.target===q('#mask'))q('#mask').classList.remove('open')};
+q('#mSave').onclick=async()=>{
+  const amt=parseInt(q('#mAmount').value,10);
+  if(!amt||amt<=0){toast('입찰 금액을 입력하세요');return}
+  const btn=q('#mSave');btn.disabled=true;btn.textContent='제출 중…';
+  const {error}=await sb.rpc('submit_bid',{p_estimate_id:curEst.id,p_amount:amt,p_duration:q('#mDuration').value.trim(),p_scope_note:q('#mScope').value.trim(),p_memo:q('#mMemo').value.trim()});
+  btn.disabled=false;btn.textContent='입찰 제출';
+  if(error){toast('제출 실패: '+error.message);return}
+  q('#mask').classList.remove('open'); toast('입찰이 제출되었습니다'); loadOpen(); loadMine();
+};
+
+/* 내 입찰 */
+async function loadMine(){
+  const {data,error}=await sb.rpc('my_bids');
+  if(error){q('#mineGrid').innerHTML=`<div class="empty">조회 실패: ${error.message}</div>`;return}
+  const list=data||[]; q('#mineCnt').textContent=list.length?`(${list.length})`:'';
+  if(!list.length){q('#mineGrid').innerHTML='<div class="empty">아직 제출한 입찰이 없습니다.</div>';return}
+  q('#mineGrid').innerHTML=list.map(o=>{
+    const b=o.bid,e=o.estimate;
+    return `<div class="bcard">
+      <div class="hd"><span class="rno">${e.receipt_no||'-'}</span><span class="badge b-${b.status}">${b.status}</span></div>
+      <div class="kv">
+        <div class="k">업종·지역</div><div class="v">${e.space||'-'} · ${e.address||'-'}</div>
+        <div class="k">평수·범위</div><div class="v">${e.area||'-'} · ${scopeText(e.scope)}</div>
+        <div class="k">내 입찰가</div><div class="v" style="color:var(--navy);font-weight:800">${won(b.amount)}</div>
+        <div class="k">공사기간</div><div class="v">${b.duration||'-'}</div>
+      </div>
+      ${b.status==='낙찰'?`<div class="won"><b>🎉 낙찰되었습니다!</b><br>고객: ${e.name||'-'} / ${e.phone||'-'}<br><span style="color:var(--muted);font-size:11.5px">퍼스트철거에서 곧 연결을 도와드립니다.</span></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+boot();
+</script>
+</body>
+</html>
