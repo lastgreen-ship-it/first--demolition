@@ -212,7 +212,7 @@ renderPhotos();recalc();
 qa('#faqList .faqQ').forEach(btn=>btn.addEventListener('click',()=>{const it=btn.parentElement;const open=it.classList.contains('open');qa('#faqList .faqItem').forEach(x=>x.classList.remove('open'));if(!open)it.classList.add('open');}));
 /* 신뢰지표 카운터 */
 (function(){const els=qa('.statCard b[data-count]');if(!els.length)return;let done=false;function run(){if(done)return;done=true;els.forEach(el=>{const target=+el.dataset.count,suf=el.dataset.suffix||'';const dur=1400,t0=performance.now();function step(now){const p=Math.min(1,(now-t0)/dur);const val=Math.round(target*(1-Math.pow(1-p,3)));el.textContent=val.toLocaleString()+suf;if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);});}
-if('IntersectionObserver'in window){const io=new IntersectionObserver(en=>{en.forEach(e=>{if(e.isIntersecting)run();});},{threshold:.4});io.observe(els[0].closest('.statGrid'));}else run();})();
+const grid=els[0].closest('.statGrid');function check(){if(done)return;if(grid.getBoundingClientRect().top<innerHeight*0.85){run();window.removeEventListener('scroll',check);}}window.addEventListener('scroll',check,{passive:true});check();})();
 </script>
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </body>
