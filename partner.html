@@ -71,8 +71,17 @@ label.f{display:block;font-weight:800;font-size:12px;margin:12px 0 5px}
 .refbox{background:#f7faff;border:1px solid #e6eefb;border-radius:9px;padding:9px 11px;font-size:12px;margin-bottom:12px}
 .mfoot{display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid var(--line)}
 .mfoot .save{background:var(--blue);color:#fff;border:0;border-radius:9px;padding:10px 20px;font-weight:800;cursor:pointer}.mfoot .save:disabled{opacity:.6}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:10px;font-weight:700;opacity:0;transition:.25s;z-index:80}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:10px;font-weight:700;opacity:0;transition:.25s;z-index:80;max-width:92vw;text-align:center}
 .toast.show{opacity:1}
+@media(max-width:600px){
+  .top{padding:0 12px}.top .brand{font-size:14px;gap:8px}.top .brand .mark{width:26px;height:26px;border-radius:8px}
+  .top a.home{display:none}.top .right{gap:8px;font-size:11px}.top .acct{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .main{padding:14px 12px 44px}
+  .grid{grid-template-columns:1fr}
+  .gbox{padding:24px 18px}.row2{grid-template-columns:1fr;gap:0}
+  .tabs .t{flex:1;text-align:center;padding:10px 8px}
+  .modal{width:100%}.mask{padding:12px;align-items:flex-end}.modal{max-height:88vh}
+}
 </style>
 </head>
 <body>
