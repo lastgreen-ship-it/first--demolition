@@ -73,6 +73,14 @@
 .det.ok{color:var(--ok);border-color:#bfe9d6}.det.ok:hover{background:var(--ok);color:#fff;border-color:var(--ok)}
 .det.bad{color:var(--bad);border-color:#f2c4c4}.det.bad:hover{background:var(--bad);color:#fff;border-color:var(--bad)}
 .bmrow{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.tbl th.sortable{cursor:pointer;user-select:none}.tbl th.sortable:hover{color:var(--navy)}.tbl th .arr{font-size:9px;margin-left:2px}
+tr.today td{background:#fffdf3}
+.newtag{background:var(--gold);color:var(--navy);font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;margin-left:5px}
+.star{cursor:pointer;font-size:15px;color:#d4d9e2;background:none;border:0;padding:0}.star.on{color:#f3c75d}
+.cpy{border:0;background:#eef1f6;border-radius:6px;padding:2px 6px;font-size:10.5px;cursor:pointer;margin-left:4px;color:var(--muted)}.cpy:hover{background:#dde3ec}
+.csvbtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px}.csvbtn:hover{background:#f3f6fb}
+.bidsort{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12px;background:#fff}
+@media print{body *{visibility:hidden}#mask,#mask *{visibility:visible}#mask{position:absolute;inset:0;padding:0;background:#fff;display:flex!important}.modal{box-shadow:none;max-height:none}.mfoot,.mhead .x{visibility:hidden}}
 .det{border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 11px;font-weight:800;font-size:11.5px;cursor:pointer;color:var(--navy)}
 .det:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
 .pager{display:flex;align-items:center;justify-content:center;gap:6px;padding:14px}
@@ -186,7 +194,7 @@
         <div class="tile"><small>전체 신청</small><b id="tAll">-</b></div>
       </div>
       <div class="panel">
-        <div class="phead"><h2>신청 목록 <span id="cnt">불러오는 중…</span></h2><div class="out"><button class="refresh" id="btnRefresh">새로고침</button><span>20건씩 출력</span></div></div>
+        <div class="phead"><h2>신청 목록 <span id="cnt">불러오는 중…</span></h2><div class="out"><button class="csvbtn" id="btnCsv">⬇ CSV</button><button class="refresh" id="btnRefresh">새로고침</button><span>20건씩</span></div></div>
         <div class="filters">
           <div class="frow"><div class="lab">업종</div><div id="fJob"></div></div>
           <div class="frow"><div class="lab">진행상태</div><div id="fStat"></div></div>
@@ -201,7 +209,7 @@
         <div style="overflow:auto">
         <table class="tbl">
           <thead><tr>
-            <th>접수번호</th><th>접수일시</th><th class="lft">업종 · 지역</th><th>평수 · 범위</th><th>이름</th><th>연락처</th><th>AI 예상견적</th><th>완성도</th><th>담당자</th><th>상담예정</th><th>진행상태</th><th></th>
+            <th></th><th>접수번호</th><th class="sortable" data-sort="created_at">접수일시<span class="arr"></span></th><th class="lft">업종 · 지역</th><th>평수 · 범위</th><th>이름</th><th>연락처</th><th class="sortable" data-sort="price">AI 예상견적<span class="arr"></span></th><th class="sortable" data-sort="completeness_score">완성도<span class="arr"></span></th><th>담당자</th><th>상담예정</th><th>진행상태</th><th></th>
           </tr></thead>
           <tbody id="rows"></tbody>
         </table>
@@ -263,7 +271,7 @@
           <div class="tile"><small>승인 시공사</small><b id="bCont">-</b></div>
         </div>
         <div class="panel">
-          <div class="phead"><h2>입찰 관리 <span id="bidCnt"></span></h2><div class="out"><button class="refresh" id="btnBidRefresh">새로고침</button><span>건별 입찰 모집·낙찰</span></div></div>
+          <div class="phead"><h2>입찰 관리 <span id="bidCnt"></span></h2><div class="out"><select class="bidsort" id="bidSort"><option value="default">기본순</option><option value="bids">입찰 많은순</option><option value="open">모집중 먼저</option></select><button class="refresh" id="btnBidRefresh">새로고침</button></div></div>
           <div style="overflow:auto"><table class="tbl">
             <thead><tr><th>접수번호</th><th class="lft">업종·지역</th><th>평수·범위</th><th>AI견적</th><th>입찰상태</th><th>입찰수</th><th>마감일</th><th></th></tr></thead>
             <tbody id="bidRows"></tbody>
@@ -309,7 +317,7 @@
         <div class="mfield"><label>상담 메모</label><textarea id="mMemo" placeholder="상담 내용·메모"></textarea></div>
       </div>
     </div>
-    <div class="mfoot"><button class="save" id="mSave">저장</button></div>
+    <div class="mfoot"><button class="det" id="mPrint" style="margin-right:auto">🖨 인쇄</button><button class="save" id="mSave">저장</button></div>
   </div>
 </div>
 <!-- 입찰 관리 모달 -->
@@ -386,10 +394,17 @@ q('#btnLogout').onclick=async()=>{await sb.auth.signOut();location.reload()};
 async function loadData(){
   q('#cnt').textContent='불러오는 중…';
   const {data,error}=await sb.from('estimates').select('*').order('created_at',{ascending:false});
-  if(error){q('#cnt').textContent='조회 오류';q('#rows').innerHTML=`<tr><td colspan="12" class="empty">조회 실패: ${error.message}<br><span style="font-size:11px">(로그인/권한을 확인하세요)</span></td></tr>`;return}
+  if(error){q('#cnt').textContent='조회 오류';q('#rows').innerHTML=`<tr><td colspan="13" class="empty">조회 실패: ${error.message}<br><span style="font-size:11px">(로그인/권한을 확인하세요)</span></td></tr>`;return}
   DATA=data||[]; page=1; render();
 }
 q('#btnRefresh').onclick=loadData;
+let sortKey=null, sortDir=-1;
+function priceNum(r){if(r.price_low!=null)return r.price_low;const m=(r.price_text||'').match(/\d+/g);return m?+m[0]:0}
+function isToday(r){return (r.created_at||'').slice(0,10)===todayStr()}
+function sortVal(r){return sortKey==='price'?priceNum(r):(sortKey==='completeness_score'?(r.completeness_score||0):(r.created_at||''));}
+qa('#view-list th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.sort;if(sortKey===k)sortDir=-sortDir;else{sortKey=k;sortDir=-1}render();});
+q('#btnCsv').onclick=()=>{ const rows=DATA.filter(match); const cols=[['접수번호',r=>r.receipt_no],['접수일시',r=>dtShort(r.created_at)],['업종',r=>r.space],['지역',r=>r.address],['평수',r=>r.area],['철거범위',r=>scopeText(r.scope)],['이름',r=>r.name],['연락처',r=>r.phone],['AI견적',r=>priceText(r)],['완성도',r=>r.completeness_score],['담당자',r=>r.assignee],['상담예정',r=>r.consult_date],['진행상태',r=>r.status||'신규'],['메모',r=>r.memo]]; const esc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"'; let csv='﻿'+cols.map(c=>c[0]).join(',')+'\n'; rows.forEach(r=>{csv+=cols.map(c=>esc(c[1](r))).join(',')+'\n'}); const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='퍼스트철거_신청목록_'+todayStr()+'.csv';a.click(); };
+q('#mPrint').onclick=()=>window.print();
 function scopeText(s){return Array.isArray(s)?s.join('·'):(s||'')}
 function priceText(r){return r.price_text || (r.price_low!=null?`${r.price_low}~${r.price_high}만원`:'-')}
 function dtShort(s){return s?String(s).replace('T',' ').slice(0,16):''}
@@ -414,26 +429,31 @@ function initChips(){
   chipRow('#fStat',STAT,'stat');
 }
 function render(){
-  const list=DATA.filter(match);
+  let list=DATA.filter(match);
+  list.sort((a,b)=>{const pa=a.pinned?1:0,pb=b.pinned?1:0;if(pa!==pb)return pb-pa;if(sortKey){const va=sortVal(a),vb=sortVal(b);if(va<vb)return sortDir;if(va>vb)return -sortDir;}return 0;});
   q('#cnt').textContent=`총 ${list.length} 건`;
   const pages=Math.max(1,Math.ceil(list.length/PER)); if(page>pages)page=pages;
   const slice=list.slice((page-1)*PER,page*PER);
-  q('#rows').innerHTML= slice.length? slice.map(r=>{const st=r.status||'신규';const c=r.completeness_score;return `
-    <tr>
-      <td class="rno">${r.receipt_no||'-'}</td>
+  q('#rows').innerHTML= slice.length? slice.map(r=>{const st=r.status||'신규';const c=r.completeness_score;const tel=(r.phone||'').replace(/[^0-9]/g,'');return `
+    <tr class="${isToday(r)?'today':''}">
+      <td><button class="star ${r.pinned?'on':''}" data-star="${r.id}">${r.pinned?'★':'☆'}</button></td>
+      <td class="rno">${r.receipt_no||'-'}${isToday(r)?'<span class="newtag">NEW</span>':''}</td>
       <td>${dtShort(r.created_at)}</td>
       <td class="lft">${r.space||'-'}<br><span style="color:var(--muted)">${r.address||''}</span></td>
       <td>${r.area||'-'}<br><span style="color:var(--muted);font-size:11px">${scopeText(r.scope)}</span></td>
       <td>${r.name||'-'}</td>
-      <td>${r.phone||'-'}</td>
+      <td>${r.phone?`<a href="tel:${tel}" style="color:var(--navy);text-decoration:none">${r.phone}</a> <button class="cpy" data-copy="${r.phone}">복사</button>`:'-'}</td>
       <td class="price">${priceText(r)}</td>
       <td style="font-weight:800;color:${c>=80?'#10a878':c>=70?'#ef9f25':'#e25555'}">${c!=null?c+'%':'-'}</td>
       <td>${r.assignee||'<span style="color:#b8c2d4">-</span>'}</td>
       <td>${r.consult_date||'<span style="color:#b8c2d4">-</span>'}</td>
       <td><span class="badge b-${st}">${st}</span></td>
       <td><button class="det" data-id="${r.id}">상세</button></td>
-    </tr>`}).join('') : `<tr><td colspan="12" class="empty">조건에 맞는 신청이 없습니다.</td></tr>`;
+    </tr>`}).join('') : `<tr><td colspan="13" class="empty">조건에 맞는 신청이 없습니다.</td></tr>`;
   q('#rows').querySelectorAll('.det').forEach(b=>b.onclick=()=>openDetail(b.dataset.id));
+  q('#rows').querySelectorAll('.star').forEach(b=>b.onclick=async(ev)=>{ev.stopPropagation();const r=DATA.find(x=>String(x.id)===String(b.dataset.star));if(!r)return;const nv=!r.pinned;const {error}=await sb.from('estimates').update({pinned:nv}).eq('id',r.id);if(error){toast('실패: '+error.message);return}r.pinned=nv;render();});
+  q('#rows').querySelectorAll('.cpy').forEach(b=>b.onclick=(ev)=>{ev.stopPropagation();try{navigator.clipboard.writeText(b.dataset.copy)}catch(e){}toast('복사됨: '+b.dataset.copy)});
+  qa('#view-list th.sortable').forEach(th=>{const a=th.querySelector('.arr');if(a)a.textContent=(sortKey===th.dataset.sort)?(sortDir<0?' ▼':' ▲'):'';});
   q('#pager').innerHTML=Array.from({length:pages},(_,i)=>`<button class="${page===i+1?'on':''}" data-p="${i+1}">${i+1}</button>`).join('');
   q('#pager').querySelectorAll('button').forEach(b=>b.onclick=()=>{page=+b.dataset.p;render()});
   const today=new Date().toISOString().slice(0,10), mon=today.slice(0,7);
@@ -600,7 +620,11 @@ async function loadBidsAdmin(){
 q('#btnBidRefresh').onclick=async()=>{await loadData();await loadBidsAdmin();};
 function bidsFor(eid){return BIDS.filter(b=>String(b.estimate_id)===String(eid))}
 function renderBids(){
-  const list=DATA; q('#bidCnt').textContent=`총 ${list.length} 건`;
+  let list=DATA.slice();
+  const bsort=(q('#bidSort')&&q('#bidSort').value)||'default';
+  if(bsort==='bids'){list.sort((a,b)=>bidsFor(b.id).filter(x=>x.status==='입찰'||x.status==='낙찰').length-bidsFor(a.id).filter(x=>x.status==='입찰'||x.status==='낙찰').length);}
+  else if(bsort==='open'){const rk=e=>({'모집중':0,'마감':1,'낙찰':2,'비공개':3}[e.bid_status||'비공개']??3);list.sort((a,b)=>rk(a)-rk(b));}
+  q('#bidCnt').textContent=`총 ${list.length} 건`;
   q('#bOpen').textContent=DATA.filter(e=>e.bid_status==='모집중').length;
   q('#bRecv').textContent=BIDS.filter(b=>b.status==='입찰'||b.status==='낙찰').length;
   q('#bAward').textContent=DATA.filter(e=>e.bid_status==='낙찰').length;
@@ -620,6 +644,7 @@ function renderBids(){
   }).join('') : `<tr><td colspan="8" class="empty">견적 건이 없습니다.</td></tr>`;
   q('#bidRows').querySelectorAll('.det').forEach(b=>b.onclick=()=>openBidsModal(b.dataset.id));
 }
+if(q('#bidSort'))q('#bidSort').onchange=renderBids;
 let bmEst=null;
 function openBidsModal(eid){
   const e=DATA.find(x=>String(x.id)===String(eid)); if(!e)return; bmEst=e;
