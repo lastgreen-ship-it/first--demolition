@@ -93,19 +93,20 @@ function render(){
     html+=`<div class="state"><div class="ic">📩</div>아직 도착한 입찰이 없습니다.<br>업체들이 입찰하면 이 화면에 표시됩니다.</div>`;
     q('#content').innerHTML=html; return;
   }
-  html+=`<div class="sec">입찰한 업체 <span class="cnt">${bids.length}곳 · 금액순</span></div>`;
+  html+=`<div class="sec">입찰한 업체 <span class="cnt">${bids.length}곳 · 금액순${awarded?'':' · 업체명은 선택 시 공개'}</span></div>`;
   bids.forEach((b,i)=>{
     const isWon=b.status==='낙찰', isBest=i===0&&!awarded;
+    const dispName=b.company_name||('업체 '+String.fromCharCode(65+i));
     let action='';
     if(awarded){ action= isWon?'<div class="won">✔ 선택한 업체입니다</div>':''; }
     else if(pendingBid===b.id){
-      action=`<div class="confirm"><p>${b.company_name} 업체로 선택하시겠어요? 선택 후에는 변경이 어렵습니다.</p><div class="row"><button class="yes" data-yes="${b.id}">네, 이 업체로 선택</button><button class="no" data-no="1">취소</button></div></div>`;
+      action=`<div class="confirm"><p>${dispName} (으)로 선택하시겠어요? 선택하시면 업체 정보가 공개되고, 퍼스트철거가 바로 연결해 드립니다. 선택 후에는 변경이 어렵습니다.</p><div class="row"><button class="yes" data-yes="${b.id}">네, 이 업체로 선택</button><button class="no" data-no="1">취소</button></div></div>`;
     } else {
       action=`<button class="pick" data-pick="${b.id}">이 업체로 선택</button>`;
     }
     html+=`<div class="card ${isBest?'best':''} ${isWon?'chosen':''}">
       ${isBest?'<span class="rank">최저가</span>':''}
-      <div class="name">${b.company_name||'업체'} ${b.rating?`<span style="color:var(--gold);font-size:12px;font-weight:800">${stars(b.rating)}</span>`:''}</div>
+      <div class="name">${dispName} ${b.rating?`<span style="color:var(--gold);font-size:12px;font-weight:800">${stars(b.rating)}</span>`:''}</div>
       <div class="price">${won(b.amount)}</div>
       <div class="meta"><span>⏱ 공사기간 ${b.duration||'협의'}</span></div>
       ${b.scope_note?`<div class="note"><b>범위</b> · ${b.scope_note}</div>`:''}
