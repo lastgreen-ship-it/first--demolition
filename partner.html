@@ -318,61 +318,60 @@ const DOC_TYPES=[
   {key:'waste', label:'폐기물 수집·운반 허가증 / 위탁계약서', req:false},
   {key:'insurance', label:'영업배상책임보험 증권', req:false}
 ];
-let docFiles={}; // key -> File (새로 선택한 것)
+function docByKey(){const m={};(ME.documents||[]).forEach(d=>m[d.key]=d);return m;}
+async function openDoc(path){
+  const {data,error}=await sb.storage.from('contractor-docs').createSignedUrl(path,300);
+  if(error){toast('열기 실패: '+error.message);return}
+  window.open(data.signedUrl,'_blank');
+}
+// 재사용 서류 폼: host 요소에 렌더링, 제출 시 submit_documents 호출 후 onDone(me)
+function mountDocForm(host, opts){
+  const {submitLabel='서류 제출하고 심사 요청', onDone, onCancel, warn}=opts||{};
+  const existing=docByKey(); const files={};
+  host.innerHTML=`${warn?`<div class="reviewbox" style="background:#fff8e6;border-color:#f1dda2;color:#8a6100">${warn}</div>`:''}
+    <div class="bcard">
+      <div class="docList"></div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="gbtn dSubmit" style="background:var(--blue);flex:1">${submitLabel}</button>
+        ${onCancel?'<button class="gbtn dCancel" style="background:#eef1f6;color:var(--ink);flex:0 0 80px">취소</button>':''}
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);text-align:center;margin:10px 0 0">업로드한 서류는 관리자만 열람하며 심사 목적으로만 사용됩니다.</p>
+    </div>`;
+  const listEl=host.querySelector('.docList');
+  function draw(){
+    listEl.innerHTML=DOC_TYPES.map(d=>{
+      const has=files[d.key]||existing[d.key];
+      const nm=files[d.key]?files[d.key].name:(existing[d.key]?(existing[d.key].name||'제출됨'):'');
+      return `<div class="docrow"><div class="dl"><b>${d.label}${d.req?'<span class="req">*</span>':' <small>(선택)</small>'}</b>${nm?`<small>${nm}</small>`:''}</div><span class="st ${has?'ok':'no'}">${has?'✓ 첨부됨':'미첨부'}</span><button class="filebtn" data-k="${d.key}">${has?'변경':'파일 선택'}</button></div>`;
+    }).join('');
+    listEl.querySelectorAll('.filebtn').forEach(b=>b.onclick=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='image/*,application/pdf';inp.onchange=()=>{if(inp.files[0]){if(inp.files[0].size>10*1024*1024){toast('파일은 10MB 이하만 가능합니다');return}files[b.dataset.k]=inp.files[0];draw();}};inp.click();});
+  }
+  draw();
+  if(onCancel)host.querySelector('.dCancel').onclick=onCancel;
+  host.querySelector('.dSubmit').onclick=async()=>{
+    const missing=DOC_TYPES.filter(d=>d.req && !files[d.key] && !existing[d.key]);
+    if(missing.length){toast('필수 서류를 첨부하세요: '+missing.map(m=>m.label.split(' ')[0]).join(', '));return}
+    const btn=host.querySelector('.dSubmit'); btn.disabled=true; btn.textContent='업로드 중…';
+    try{
+      const uid=(await sb.auth.getUser()).data.user.id; const docs=[];
+      for(const d of DOC_TYPES){
+        if(files[d.key]){const f=files[d.key];const ext=(f.name.split('.').pop()||'bin').toLowerCase();const path=`${uid}/${d.key}_${Date.now()}.${ext}`;const {error:ue}=await sb.storage.from('contractor-docs').upload(path,f,{upsert:true,contentType:f.type||undefined});if(ue)throw new Error(d.label+' 업로드 실패: '+ue.message);docs.push({key:d.key,label:d.label,path,name:f.name});}
+        else if(existing[d.key])docs.push(existing[d.key]);
+      }
+      const {data,error}=await sb.rpc('submit_documents',{p_docs:docs});
+      if(error)throw new Error(error.message);
+      ME=data; if(onDone)onDone(data);
+    }catch(e){ btn.disabled=false; btn.textContent=submitLabel; toast(e.message||'제출 실패'); }
+  };
+}
 function renderDocSubmit(){
   const v=q('#viewWait'); v.style.display='';
-  const existing={}; (ME.documents||[]).forEach(d=>existing[d.key]=d);
-  docFiles={};
   const note = ME.status==='보완요청' && ME.review_note ? `<div class="reviewbox"><b>⚠ 서류 보완이 필요합니다</b><br>${ME.review_note}</div>` : '';
   v.innerHTML=`<div style="max-width:560px;margin:0 auto">
     <div class="notice" style="text-align:left;padding:22px 22px 8px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:6px"><div class="ic" style="width:46px;height:46px;background:#eef2ff;color:var(--blue);margin:0;font-size:22px">📄</div><div><h2 style="margin:0;font-size:18px">시공사 증빙 서류 제출</h2><p style="margin:2px 0 0">최종 승인을 위해 아래 서류를 업로드해 주세요. <span style="color:var(--bad)">*</span> 표시는 필수입니다.</p></div></div></div>
     ${note}
-    <div class="bcard" style="margin-top:14px">
-      <div id="docList"></div>
-      <button class="gbtn" id="btnDocSubmit" style="background:var(--blue);margin-top:16px">서류 제출하고 심사 요청</button>
-      <p style="font-size:11.5px;color:var(--muted);text-align:center;margin:10px 0 0">업로드한 서류는 관리자만 열람하며 심사 목적으로만 사용됩니다.</p>
-    </div></div>`;
-  function drawList(){
-    q('#docList').innerHTML=DOC_TYPES.map(d=>{
-      const has=docFiles[d.key]||existing[d.key];
-      const stName=docFiles[d.key]?docFiles[d.key].name:(existing[d.key]?(existing[d.key].name||'제출됨'):'');
-      return `<div class="docrow">
-        <div class="dl"><b>${d.label}${d.req?'<span class="req">*</span>':' <small>(선택)</small>'}</b>${stName?`<small>${stName}</small>`:''}</div>
-        <span class="st ${has?'ok':'no'}">${has?'✓ 첨부됨':'미첨부'}</span>
-        <button class="filebtn" data-k="${d.key}">${has?'변경':'파일 선택'}</button>
-      </div>`;
-    }).join('');
-    q('#docList').querySelectorAll('.filebtn').forEach(b=>b.onclick=()=>{
-      const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*,application/pdf';
-      inp.onchange=()=>{ if(inp.files[0]){ if(inp.files[0].size>10*1024*1024){toast('파일은 10MB 이하만 가능합니다');return} docFiles[b.dataset.k]=inp.files[0]; drawList(); } };
-      inp.click();
-    });
-  }
-  drawList();
-  q('#btnDocSubmit').onclick=async()=>{
-    // 필수 검증 (새로 선택했거나 기존 제출분이 있으면 OK)
-    const missing=DOC_TYPES.filter(d=>d.req && !docFiles[d.key] && !existing[d.key]);
-    if(missing.length){toast('필수 서류를 첨부하세요: '+missing.map(m=>m.label.split(' ')[0]).join(', '));return}
-    const btn=q('#btnDocSubmit'); btn.disabled=true; btn.textContent='업로드 중…';
-    try{
-      const uid=(await sb.auth.getUser()).data.user.id;
-      const docs=[];
-      for(const d of DOC_TYPES){
-        if(docFiles[d.key]){
-          const f=docFiles[d.key]; const ext=(f.name.split('.').pop()||'bin').toLowerCase();
-          const path=`${uid}/${d.key}_${Date.now()}.${ext}`;
-          const {error:ue}=await sb.storage.from('contractor-docs').upload(path,f,{upsert:true,contentType:f.type||undefined});
-          if(ue) throw new Error(d.label+' 업로드 실패: '+ue.message);
-          docs.push({key:d.key,label:d.label,path,name:f.name});
-        } else if(existing[d.key]){
-          docs.push(existing[d.key]);
-        }
-      }
-      const {data,error}=await sb.rpc('submit_documents',{p_docs:docs});
-      if(error) throw new Error(error.message);
-      ME=data; toast('서류가 제출되었습니다. 심사 결과를 기다려 주세요.'); route();
-    }catch(e){ btn.disabled=false; btn.textContent='서류 제출하고 심사 요청'; toast(e.message||'제출 실패'); }
-  };
+    <div id="docFormHost" style="margin-top:14px"></div></div>`;
+  mountDocForm(q('#docFormHost'), {onDone:()=>{toast('서류가 제출되었습니다. 심사 결과를 기다려 주세요.');route();}});
 }
 function renderNotice(cls,ic,title,lines){
   const v=q('#viewWait'); v.style.display='';
@@ -448,7 +447,12 @@ function cardHtml(e,sample){
 /* 내 업체정보 */
 function renderProfile(){
   const c=ME||{};
-  q('#tabProfile').innerHTML=`<div class="bcard pinfo" style="max-width:520px">
+  const existing=docByKey();
+  const docList=DOC_TYPES.map(d=>{
+    const e=existing[d.key];
+    return `<div class="docrow"><div class="dl"><b>${d.label}${d.req?'':' <small>(선택)</small>'}</b>${e?`<small>${e.name||'제출됨'}</small>`:''}</div>${e?`<span class="st ok">✓ 제출됨</span><button class="filebtn" data-open="${e.path}">보기</button>`:'<span class="st no">미제출</span>'}</div>`;
+  }).join('');
+  q('#tabProfile').innerHTML=`<div class="bcard pinfo" style="max-width:560px">
     <div class="kv">
       <div class="k">업체명</div><div class="v"><b>${c.company_name||'-'}</b></div>
       <div class="k">상태</div><div class="v"><span class="badge b-${c.status||'대기'}">${c.status||'-'}</span></div>
@@ -460,8 +464,25 @@ function renderProfile(){
       <div class="k">평점</div><div class="v">${c.rating?c.rating+' ★':'평가 전'}</div>
     </div>
     <button class="gbtn" id="btnEditProfile" style="background:var(--blue);margin-top:16px">업체 정보 수정</button>
+  </div>
+  <div class="bcard pinfo" style="max-width:560px;margin-top:14px">
+    <h3 style="margin:0 0 10px;font-size:15px">제출 서류</h3>
+    ${docList}
+    <button class="gbtn" id="btnDocEdit" style="background:#eef1f6;color:var(--ink);margin-top:14px">서류 수정 · 추가</button>
+    <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">※ 서류를 수정·추가하면 재심사가 진행되며, 재승인 전까지 입찰이 일시 중지됩니다.</p>
   </div>`;
   q('#btnEditProfile').onclick=openProfileEdit;
+  q('#tabProfile').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openDoc(b.dataset.open));
+  q('#btnDocEdit').onclick=openDocEdit;
+}
+function openDocEdit(){
+  q('#tabProfile').innerHTML=`<div style="max-width:560px"><h3 style="margin:0 0 12px;font-size:16px">서류 수정 · 추가</h3><div id="docEditHost"></div></div>`;
+  mountDocForm(q('#docEditHost'), {
+    submitLabel:'수정 서류 제출(재심사)',
+    warn:'⚠ 제출하면 재심사가 진행되어, 재승인 전까지 입찰이 일시 중지됩니다.',
+    onCancel:renderProfile,
+    onDone:()=>{ toast('서류가 다시 제출되었습니다. 재심사를 기다려 주세요.'); route(); }
+  });
 }
 function openProfileEdit(){
   const c=ME||{};
