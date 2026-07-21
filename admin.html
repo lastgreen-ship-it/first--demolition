@@ -73,6 +73,10 @@
 .b-가입대기{background:var(--warn)}.b-서류대기{background:var(--blue)}.b-심사중{background:#7c5cff}.b-최종승인{background:var(--ok)}.b-보완요청{background:#e2551f}
 .tg{display:inline-block;background:#eef4ff;color:var(--blue);border:1px solid #d5e2fb;border-radius:6px;padding:1px 6px;font-size:10.5px;font-weight:800;margin:2px 3px 0 0}
 .srcb{display:inline-block;border-radius:6px;padding:1px 6px;font-size:10.5px;font-weight:800;margin-top:2px}
+.mphotos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px}
+.mphotos a{display:block;aspect-ratio:1;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#f5f8fc}
+.mphotos img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.mphotos .none{grid-column:1/-1;color:#b8c2d4;font-size:12px;padding:10px 0}
 #advToggle{cursor:pointer;color:var(--blue);font-weight:800;user-select:none}
 .bulkbar{display:none;padding:10px 18px;background:#eef4ff;border-bottom:1px solid var(--line);align-items:center;gap:8px;flex-wrap:wrap}
 .bulkbar.on{display:flex}
@@ -351,6 +355,8 @@ tr.today td{background:#fffdf3}
       <div class="mcol l">
         <h4>현장 기본정보</h4><div class="kv" id="kvBasic"></div>
         <h4>정밀 설문</h4><div class="kv" id="kvSurvey"></div>
+        <h4>현장 사진 <span id="mPhotoN" style="color:var(--muted);font-weight:600;font-size:12px"></span></h4>
+        <div class="mphotos" id="mPhotos"></div>
       </div>
       <div class="mcol">
         <h4>AI 예상견적</h4><div class="priceBig" id="mPrice">-</div><div class="kv" id="kvEst"></div>
@@ -361,6 +367,13 @@ tr.today td{background:#fffdf3}
         <div class="mfield"><label>태그 (쉼표로 구분)</label><input id="mTags" placeholder="예: 급함, VIP, 재문의" list="tagList"></div>
         <datalist id="tagList"></datalist>
         <div class="mfield"><label>상담 메모</label><textarea id="mMemo" placeholder="상담 내용·메모"></textarea></div>
+        <div style="border-top:1px dashed var(--line);margin:14px 0 4px;padding-top:12px">
+          <div style="font-weight:800;font-size:13px;color:var(--navy);margin-bottom:4px">실측 결과 입력 <span style="color:var(--muted);font-weight:600;font-size:11px">· AI 정확도 학습용 (시공 후 입력)</span></div>
+          <div class="mfield" style="margin-top:8px"><label>실제 시공가 (만원)</label><input id="mActPrice" type="number" inputmode="numeric" placeholder="예) 420"></div>
+          <div class="mfield"><label>실제 폐기물량</label><input id="mActWaste" placeholder="예) 3.5톤 / 5루베"></div>
+          <div class="mfield"><label>실제 작업일수</label><input id="mActDays" placeholder="예) 2일"></div>
+          <div class="mfield"><label>오차 원인·메모</label><textarea id="mActNote" placeholder="예) 천장 내부 철골 추가 발견으로 +80만원"></textarea></div>
+        </div>
       </div>
     </div>
     <div class="mfoot"><button class="det" id="mPrint" style="margin-right:auto">🖨 인쇄</button><button class="save" id="mSave">저장</button></div>
@@ -640,14 +653,27 @@ function openDetail(id){
   const campaign=[r.utm_campaign,r.utm_content].filter(Boolean).join(' / ');
   q('#kvContact').innerHTML=kv({'이름':r.name,'연락처':r.phone,'개인정보 동의':r.agree?'Y':'N','마케팅 수신동의':r.consent_marketing?'Y':'N','유입경로':srcLabel(r.source||'organic')+(r.lead_type==='lead'?' (리드)':''),'캠페인':campaign||'-','UTM 매체':r.utm_source?`${r.utm_source}${r.utm_medium?' / '+r.utm_medium:''}`:'-','유입 URL':r.landing_url||'-'});
   q('#mStatus').value=r.status||'신규'; q('#mAssignee').value=r.assignee||''; q('#mDate').value=r.consult_date||''; q('#mMemo').value=r.memo||''; q('#mTags').value=(r.tags||[]).join(', ');
+  q('#mActPrice').value=r.actual_price??''; q('#mActWaste').value=r.actual_waste||''; q('#mActDays').value=r.actual_days||''; q('#mActNote').value=r.actual_note||'';
+  loadPhotos(r);
   q('#mask').classList.add('open');
+}
+async function loadPhotos(r){
+  const paths=r.photo_paths||[]; const host=q('#mPhotos');
+  q('#mPhotoN').textContent=paths.length?`(${paths.length}장)`:'';
+  if(!paths.length){host.innerHTML='<div class="none">업로드된 사진이 없습니다.</div>';return}
+  host.innerHTML='<div class="none">사진 불러오는 중…</div>';
+  const items=[];
+  for(const p of paths){const {data,error}=await sb.storage.from('estimate-photos').createSignedUrl(p,600);if(!error&&data)items.push(data.signedUrl);}
+  host.innerHTML=items.length?items.map(u=>`<a href="${u}" target="_blank"><img src="${u}" alt="현장 사진"></a>`).join(''):'<div class="none">사진을 불러올 수 없습니다.</div>';
 }
 q('#mClose').onclick=()=>q('#mask').classList.remove('open');
 q('#mask').onclick=e=>{if(e.target===q('#mask'))q('#mask').classList.remove('open')};
 q('#mSave').onclick=async()=>{
   if(!cur)return; const btn=q('#mSave'); btn.disabled=true; btn.textContent='저장 중…';
   const tags=q('#mTags').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const upd={status:q('#mStatus').value,assignee:q('#mAssignee').value||null,consult_date:q('#mDate').value||null,memo:q('#mMemo').value||null,tags,updated_at:new Date().toISOString()};
+  const ap=q('#mActPrice').value.trim();
+  const hasActual=ap!==''||q('#mActWaste').value.trim()||q('#mActDays').value.trim()||q('#mActNote').value.trim();
+  const upd={status:q('#mStatus').value,assignee:q('#mAssignee').value||null,consult_date:q('#mDate').value||null,memo:q('#mMemo').value||null,tags,actual_price:ap===''?null:Number(ap),actual_waste:q('#mActWaste').value.trim()||null,actual_days:q('#mActDays').value.trim()||null,actual_note:q('#mActNote').value.trim()||null,actual_at:hasActual?new Date().toISOString():null,updated_at:new Date().toISOString()};
   const {error}=await sb.from('estimates').update(upd).eq('id',cur.id);
   btn.disabled=false; btn.textContent='저장';
   if(error){toast('저장 실패: '+error.message);return}
