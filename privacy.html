@@ -22,8 +22,7 @@ li{margin:4px 0}
 table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px}
 th,td{border:1px solid var(--line);padding:8px 10px;text-align:left}
 th{background:#f4f7fb}
-.ph{background:#fff4ee;color:var(--warn);border-radius:4px;padding:0 5px;font-weight:800;font-size:13px}
-.note{background:#fff8e6;border:1px solid #f1dda6;border-radius:10px;padding:13px 15px;font-size:13px;color:#8a6100;margin:18px 0}
+.note{background:#f4f8ff;border:1px solid #cfe0ff;border-radius:10px;padding:13px 15px;font-size:13px;color:#2b4a7a;margin:18px 0}
 .foot{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 0 40px}
 a{color:var(--blue)}
 </style>
@@ -33,25 +32,23 @@ a{color:var(--blue)}
 <div class="wrap">
   <div class="doc">
     <h1>개인정보처리방침</h1>
-    <div class="upd">시행일: <span class="ph">[YYYY-MM-DD]</span></div>
+    <div class="upd">시행일: 2026-07-22</div>
 
-    <div class="note">⚠ 이 문서는 <b>초안 템플릿</b>입니다. <span class="ph">[대괄호]</span> 안의 사업자 정보(상호·대표자·사업자등록번호·주소·연락처·보호책임자)를 실제 값으로 채운 뒤 게시하세요. 법적 효력을 위해 최종본은 전문가 검토를 권장합니다.</div>
-
-    <p><span class="ph">[퍼스트철거 / 회사명]</span>(이하 '회사')는 「개인정보 보호법」 등 관련 법령을 준수하며, 이용자의 개인정보를 보호하기 위해 다음과 같은 처리방침을 둡니다.</p>
+    <p>주식회사 퍼스트바이브(서비스명 '퍼스트철거', 이하 '회사')는 「개인정보 보호법」 등 관련 법령을 준수하며, 이용자의 개인정보를 보호하기 위해 다음과 같은 처리방침을 둡니다.</p>
 
     <h2>1. 수집하는 개인정보 항목</h2>
     <table>
       <tr><th>구분</th><th>수집 항목</th></tr>
-      <tr><td>견적·상담 신청 시</td><td>이름, 연락처(휴대전화), 현장 주소, 업종·평수·철거범위 등 현장정보, 현장 사진</td></tr>
+      <tr><td>견적·상담 신청 시(필수)</td><td>이름, 연락처(휴대전화), 현장 주소, 업종·평수·철거범위 등 현장정보, 현장 사진</td></tr>
       <tr><td>마케팅 수신 동의 시(선택)</td><td>연락처(이벤트·혜택 안내 목적)</td></tr>
-      <tr><td>자동 수집</td><td>접속 기록, 유입 경로(광고·캠페인 식별자), 쿠키·기기 정보</td></tr>
+      <tr><td>자동 수집</td><td>접속 기록, 유입 경로(광고·캠페인 식별자, 유입 URL), 쿠키·기기·브라우저 정보</td></tr>
     </table>
 
     <h2>2. 개인정보의 수집·이용 목적</h2>
     <ul>
-      <li>AI 예상견적 산출 및 철거·폐업 상담 제공</li>
-      <li>검증된 시공사와의 비교견적·매칭 및 계약 연결</li>
-      <li>폐업지원금 등 관련 정보 안내</li>
+      <li>사진·현장정보 기반 예상견적 산출 및 철거·폐업 상담 제공</li>
+      <li>서류 심사를 거친 시공사와의 비교견적·매칭 및 계약 연결</li>
+      <li>폐업지원금 등 관련 제도 안내 및 서류 준비 지원</li>
       <li>서비스 품질 개선 및 견적 정확도 향상(사진·현장정보 분석)</li>
       <li>(동의 시) 이벤트·혜택 등 마케팅 정보 제공</li>
     </ul>
@@ -64,32 +61,38 @@ a{color:var(--blue)}
       <tr><th>수탁자</th><th>위탁 업무</th></tr>
       <tr><td>Supabase (데이터베이스·스토리지)</td><td>신청·견적 데이터 및 현장 사진의 저장·관리</td></tr>
       <tr><td>Vercel (호스팅)</td><td>웹사이트 서비스 운영</td></tr>
-      <tr><td><span class="ph">[문자·알림 발송 대행사, 사용 시]</span></td><td>상담·알림 문자 발송</td></tr>
     </table>
+    <p style="font-size:13px;color:var(--muted)">※ 문자·알림 발송, CRM, AI 판독 등 추가 위탁이 발생하는 경우, 위탁 개시 전 본 방침에 수탁자와 위탁 업무를 반영하여 고지합니다.</p>
 
-    <h2>5. 보유 및 이용 기간</h2>
+    <h2>5. 개인정보의 국외 이전</h2>
+    <p>서비스 운영을 위한 위탁사(Supabase·Vercel 등)의 데이터가 국외에 소재한 서버에 저장·처리될 수 있습니다. 회사는 관련 법령에 따라 안전성 확보에 필요한 조치를 이행하며, 국외 이전이 발생하는 경우 이전받는 자·이전 국가·항목·목적·보유기간 등을 확인하여 고지합니다.</p>
+
+    <h2>6. 보유 및 이용 기간</h2>
     <p>수집한 개인정보는 수집·이용 목적이 달성되면 지체 없이 파기합니다. 다만 관계 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관합니다. 별도 동의를 받은 경우 명시한 기간까지 보관합니다.</p>
 
-    <h2>6. 정보주체의 권리</h2>
-    <p>이용자는 언제든지 자신의 개인정보 조회·정정·삭제·처리정지를 요청할 수 있으며, 마케팅 수신 동의를 철회할 수 있습니다. 요청은 아래 연락처로 접수할 수 있습니다.</p>
+    <h2>7. 정보주체의 권리</h2>
+    <p>이용자는 언제든지 자신의 개인정보 조회·정정·삭제·처리정지를 요청할 수 있으며, 마케팅 수신 동의를 철회할 수 있습니다. 요청은 아래 개인정보 보호책임자 연락처로 접수할 수 있습니다.</p>
 
-    <h2>7. 개인정보의 파기</h2>
+    <h2>8. 개인정보의 파기</h2>
     <p>보유 기간 경과 또는 처리 목적 달성 시, 전자적 파일은 복구 불가능한 방법으로 삭제하고 출력물은 파쇄합니다.</p>
 
-    <h2>8. 개인정보 보호책임자</h2>
+    <h2>9. 개인정보의 안전성 확보조치</h2>
+    <p>회사는 개인정보의 안전한 처리를 위해 접근권한 관리(행 단위 접근제어), 현장 사진·서류의 비공개 저장소 보관 및 접근 시 만료형 서명 URL 발급, 전송구간 암호화 등 관리적·기술적 보호조치를 시행합니다.</p>
+
+    <h2>10. 개인정보 보호책임자 및 사업자 정보</h2>
     <ul>
-      <li>상호: <span class="ph">[회사명]</span></li>
-      <li>대표자: <span class="ph">[대표자명]</span></li>
-      <li>사업자등록번호: <span class="ph">[000-00-00000]</span></li>
-      <li>주소: <span class="ph">[사업장 주소]</span></li>
-      <li>개인정보 보호책임자: <span class="ph">[성명 / 직책]</span></li>
-      <li>연락처: <span class="ph">[전화]</span> / 이메일: <span class="ph">[이메일]</span></li>
+      <li>상호: 주식회사 퍼스트바이브 (서비스명: 퍼스트철거)</li>
+      <li>대표자: 위계연</li>
+      <li>사업자등록번호: 881-86-03166</li>
+      <li>주소: 경기도 안양시 만안구 덕천로152번길 25, 비동 1110비호(안양동, 안양아이에스BIZ타워센트럴)</li>
+      <li>개인정보 보호책임자: 위계연 (대표)</li>
+      <li>연락처: <a href="tel:0269525390">02-6952-5390</a></li>
     </ul>
 
-    <h2>9. 고지의 의무</h2>
+    <h2>11. 고지의 의무</h2>
     <p>본 처리방침의 내용 추가·삭제·수정이 있을 경우, 시행 전 웹사이트를 통해 고지합니다.</p>
 
-    <div class="foot">© 2026 퍼스트철거 (First Demolition) · <a href="/">홈으로</a></div>
+    <div class="foot">© 2026 퍼스트철거 (First Demolition) · 운영 주식회사 퍼스트바이브 · <a href="/">홈으로</a> · <a href="/terms.html">이용약관</a></div>
   </div>
 </div>
 </body>
