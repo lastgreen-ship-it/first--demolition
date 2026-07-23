@@ -90,6 +90,8 @@ tr.urgent td{background:#fff5f0}
 .tbl th.sortable{cursor:pointer;user-select:none}.tbl th.sortable:hover{color:var(--navy)}.tbl th .arr{font-size:9px;margin-left:2px}
 tr.today td{background:#fffdf3}
 .newtag{background:var(--gold);color:var(--navy);font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;margin-left:5px}
+tr.unread td{box-shadow:inset 3px 0 0 var(--blue)}
+.udot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--blue);margin-right:5px;vertical-align:middle;box-shadow:0 0 0 3px rgba(39,103,255,.15)}
 .star{cursor:pointer;font-size:15px;color:#d4d9e2;background:none;border:0;padding:0}.star.on{color:#f3c75d}
 .cpy{border:0;background:#eef1f6;border-radius:6px;padding:2px 6px;font-size:10.5px;cursor:pointer;margin-left:4px;color:var(--muted)}.cpy:hover{background:#dde3ec}
 .csvbtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px}.csvbtn:hover{background:#f3f6fb}
@@ -454,9 +456,12 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const q=s=>document.querySelector(s),qa=s=>[...document.querySelectorAll(s)];
 const STAT=['신규','상담중','계약','실패','보류'];
 const statColor=s=>({'신규':'#2767ff','상담중':'#ef9f25','계약':'#10a878','실패':'#e25555','보류':'#9aa5b5'}[s]||'#888');
-const SRC_LABEL={organic:'자연유입',meta_ad:'메타광고',ad:'광고',referral:'외부유입',manual:'수기등록',meta_lead:'리드광고'};
+const SRC_LABEL={organic:'자연유입',meta_ad:'메타광고',ad:'광고',referral:'외부유입',manual:'수기등록',meta_lead:'리드광고','인스타 광고':'리드광고','인스타광고':'리드광고'};
 function srcLabel(s){return SRC_LABEL[s]||s||'-'}
-function srcColor(s){return ({meta_ad:'#2767ff',meta_lead:'#7c5cff',ad:'#2767ff',referral:'#0d2d5d',manual:'#9aa5b5',organic:'#8a94a6'})[s]||'#8a94a6'}
+function srcColor(s){return ({meta_ad:'#2767ff',meta_lead:'#7c5cff','인스타 광고':'#7c5cff','인스타광고':'#7c5cff',ad:'#2767ff',referral:'#0d2d5d',manual:'#9aa5b5',organic:'#8a94a6'})[s]||'#8a94a6'}
+/* ── 전화번호 형식 정규화: +82 → 0, 하이픈 표기 ── */
+function telKR(p){let d=(p||'').replace(/[^0-9+]/g,'');if(d.indexOf('+82')===0)d='0'+d.slice(3);else if(d.indexOf('82')===0&&d.length>=11)d='0'+d.slice(2);return d.replace(/[^0-9]/g,'');}
+function fmtPhone(p){if(!p)return '-';const d=telKR(p);if(/^01[016789]\d{7,8}$/.test(d))return d.length===11?d.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3'):d.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3');if(/^02\d{7,8}$/.test(d))return d.length===10?d.replace(/(\d{2})(\d{4})(\d{4})/,'$1-$2-$3'):d.replace(/(\d{2})(\d{3})(\d{4})/,'$1-$2-$3');if(/^0\d{9,10}$/.test(d))return d.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-$2-$3');return d||p;}
 function srcBadge(r){const s=r.source||'organic';const c=srcColor(s);const lt=r.lead_type==='lead'?' ·리드':'';return `<span class="srcb" style="background:${c}1a;color:${c};border:1px solid ${c}55">${srcLabel(s)}${lt}</span>`}
 let DATA=[], filt={job:'전체',stat:'전체',period:'전체',region:'전체',assignee:'전체',price:'전체',comp:'전체',bidst:'전체',support:'전체',scope:'전체',tag:'전체',source:'전체'}, page=1, cur=null; const PER=8;
 let selected=new Set();
@@ -542,7 +547,7 @@ function match(r){
   if(filt.source!=='전체'&&(r.source||'organic')!==filt.source)return false;
   const n=q('#qN').value.trim(),p=q('#qP').value.trim(),a=q('#qA').value.trim();
   if(n&&!(r.name||'').includes(n))return false;
-  if(p&&!(r.phone||'').includes(p))return false;
+  if(p){const pn=p.replace(/[^0-9]/g,'');if(!(r.phone||'').includes(p)&&!(pn&&telKR(r.phone).includes(pn)))return false;}
   if(a&&!(r.assignee||'').includes(a))return false;
   const d1=q('#d1').value,d2=q('#d2').value;
   if(d1&&day<d1)return false; if(d2&&day>d2)return false;
@@ -578,16 +583,16 @@ function render(){
   const af=activeFilterCount();q('#advHint').textContent=af?`상세필터 ${af}개 적용중`:'';
   const pages=Math.max(1,Math.ceil(list.length/PER)); if(page>pages)page=pages;
   const slice=list.slice((page-1)*PER,page*PER);
-  q('#rows').innerHTML= slice.length? slice.map(r=>{const st=r.status||'신규';const c=r.completeness_score;const tel=(r.phone||'').replace(/[^0-9]/g,'');const tags=(r.tags||[]).map(t=>`<span class="tg">${t}</span>`).join('');return `
-    <tr class="${isToday(r)?'today':''}">
+  q('#rows').innerHTML= slice.length? slice.map(r=>{const st=r.status||'신규';const c=r.completeness_score;const tel=telKR(r.phone);const ph=fmtPhone(r.phone);const tags=(r.tags||[]).map(t=>`<span class="tg">${t}</span>`).join('');return `
+    <tr class="${isToday(r)?'today ':''}${st==='신규'?'unread':''}">
       <td><input type="checkbox" class="rowchk" data-chk="${r.id}" ${selected.has(String(r.id))?'checked':''}></td>
       <td><button class="star ${r.pinned?'on':''}" data-star="${r.id}">${r.pinned?'★':'☆'}</button></td>
-      <td class="rno">${r.receipt_no||'-'}${isToday(r)?'<span class="newtag">NEW</span>':''}</td>
+      <td class="rno">${st==='신규'?'<span class="udot" title="미확인 신규"></span>':''}${r.receipt_no||'-'}${isToday(r)?'<span class="newtag">NEW</span>':''}</td>
       <td>${dtShort(r.created_at)}</td>
       <td class="lft">${r.space||'-'}<br><span style="color:var(--muted)">${r.address||''}</span><br>${srcBadge(r)}${tags?` ${tags}`:''}</td>
       <td>${r.area||'-'}<br><span style="color:var(--muted);font-size:11px">${scopeText(r.scope)}</span></td>
       <td>${r.name||'-'}</td>
-      <td>${r.phone?`<a href="tel:${tel}" style="color:var(--navy);text-decoration:none">${r.phone}</a> <button class="cpy" data-copy="${r.phone}">복사</button>`:'-'}</td>
+      <td>${r.phone?`<a href="tel:${tel}" style="color:var(--navy);text-decoration:none">${ph}</a> <button class="cpy" data-copy="${tel}">복사</button>`:'-'}</td>
       <td class="price">${priceText(r)}</td>
       <td style="font-weight:800;color:${c>=80?'#10a878':c>=70?'#ef9f25':'#e25555'}">${c!=null?c+'%':'-'}</td>
       <td>${r.assignee||'<span style="color:#b8c2d4">-</span>'}</td>
@@ -651,7 +656,7 @@ function openDetail(id){
   q('#mPrice').textContent=priceText(r);
   q('#kvEst').innerHTML=kv({'견적 완성도':(r.completeness_score!=null?r.completeness_score+'%':'-'),'공사기간':r.duration,'난이도':r.difficulty,'사진 수':(r.photo_count!=null?r.photo_count+'장':'-'),'변동요인':r.risks});
   const campaign=[r.utm_campaign,r.utm_content].filter(Boolean).join(' / ');
-  q('#kvContact').innerHTML=kv({'이름':r.name,'연락처':r.phone,'개인정보 동의':r.agree?'Y':'N','마케팅 수신동의':r.consent_marketing?'Y':'N','유입경로':srcLabel(r.source||'organic')+(r.lead_type==='lead'?' (리드)':''),'캠페인':campaign||'-','UTM 매체':r.utm_source?`${r.utm_source}${r.utm_medium?' / '+r.utm_medium:''}`:'-','유입 URL':r.landing_url||'-'});
+  q('#kvContact').innerHTML=kv({'이름':r.name,'연락처':r.phone?`<a href="tel:${telKR(r.phone)}" style="color:var(--blue);text-decoration:none">${fmtPhone(r.phone)}</a>`:'-','개인정보 동의':r.agree?'Y':'N','마케팅 수신동의':r.consent_marketing?'Y':'N','유입경로':srcLabel(r.source||'organic')+(r.lead_type==='lead'?' (리드)':''),'캠페인':campaign||'-','UTM 매체':r.utm_source?`${r.utm_source}${r.utm_medium?' / '+r.utm_medium:''}`:'-','유입 URL':r.landing_url||'-'});
   q('#mStatus').value=r.status||'신규'; q('#mAssignee').value=r.assignee||''; q('#mDate').value=r.consult_date||''; q('#mMemo').value=r.memo||''; q('#mTags').value=(r.tags||[]).join(', ');
   q('#mActPrice').value=r.actual_price??''; q('#mActWaste').value=r.actual_waste||''; q('#mActDays').value=r.actual_days||''; q('#mActNote').value=r.actual_note||'';
   loadPhotos(r);
