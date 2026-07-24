@@ -77,11 +77,12 @@ function toast(m){const t=q('#toast');t.textContent=m;t.classList.add('show');se
 function scopeText(s){return Array.isArray(s)?s.join('·'):(s||'-')}
 function won(n){return (n==null||n==='')?'견적 협의':Number(n).toLocaleString()+'만원'}
 function stars(r){r=Number(r)||0;const f=Math.round(r);return r?('★'.repeat(f)+'☆'.repeat(Math.max(0,5-f))+' '+r.toFixed(1)):''}
+function esc(v){return v==null?'':String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 async function load(){
   if(!token){ q('#content').innerHTML='<div class="state"><div class="ic">🔗</div>유효하지 않은 접근입니다.<br>문자로 받은 링크로 다시 들어와 주세요.</div>'; return }
   const {data,error}=await sb.rpc('customer_bids',{p_token:token});
-  if(error){ q('#content').innerHTML=`<div class="state"><div class="ic">⚠️</div>불러오기 실패<br><span style="font-size:12px">${error.message}</span></div>`; return }
+  if(error){ console.warn('customer_bids error:',error); q('#content').innerHTML=`<div class="state"><div class="ic">⚠️</div>정보를 불러오지 못했습니다.<br><span style="font-size:12px">잠시 후 다시 시도하시거나 ☎ 02-6952-5390 으로 문의해주세요.</span></div>`; return }
   if(!data){ q('#content').innerHTML='<div class="state"><div class="ic">🔗</div>링크가 만료되었거나 잘못되었습니다.</div>'; return }
   DATAOBJ=data; render();
 }
@@ -90,19 +91,19 @@ function render(){
   const awarded=e.awarded_bid_id;
   let html=`<div class="hero">
     <h1>받은 견적 비교</h1>
-    <div class="sub">접수번호 ${e.receipt_no||'-'} · 마음에 드는 업체를 선택하시면 퍼스트철거가 바로 연결해 드립니다.</div>
+    <div class="sub">접수번호 ${esc(e.receipt_no)||'-'} · 마음에 드는 업체를 선택하시면 퍼스트철거가 바로 연결해 드립니다.</div>
     <div class="info">
-      <div class="it"><small>업종</small><b>${e.space||'-'}</b></div>
-      <div class="it"><small>지역</small><b>${e.address||'-'}</b></div>
-      <div class="it"><small>평수</small><b>${e.area||'-'}</b></div>
-      <div class="it"><small>철거범위</small><b>${scopeText(e.scope)}</b></div>
-      <div class="it"><small>AI 참고견적</small><b>${e.price_text||'-'}</b></div>
+      <div class="it"><small>업종</small><b>${esc(e.space)||'-'}</b></div>
+      <div class="it"><small>지역</small><b>${esc(e.address)||'-'}</b></div>
+      <div class="it"><small>평수</small><b>${esc(e.area)||'-'}</b></div>
+      <div class="it"><small>철거범위</small><b>${esc(scopeText(e.scope))}</b></div>
+      <div class="it"><small>AI 참고견적</small><b>${esc(e.price_text)||'-'}</b></div>
     </div>
   </div>`;
 
   if(awarded){
     const w=bids.find(b=>b.id===awarded);
-    html+=`<div class="awardedTop">✔ 이미 <b>${w?w.company_name:'선택한 업체'}</b> 로 선택 완료되었습니다. 퍼스트철거에서 곧 연락드립니다.</div>`;
+    html+=`<div class="awardedTop">✔ 이미 <b>${w?esc(w.company_name):'선택한 업체'}</b> 로 선택 완료되었습니다. 퍼스트철거에서 곧 연락드립니다.</div>`;
   }
   if(!bids.length){
     html+=`<div class="state"><div class="ic">📩</div>아직 도착한 입찰이 없습니다.<br>업체들이 입찰하면 이 화면에 표시됩니다.</div>`;
@@ -111,7 +112,7 @@ function render(){
   html+=`<div class="sec">입찰한 업체 <span class="cnt">${bids.length}곳 · 금액순${awarded?'':' · 업체명은 선택 시 공개'}</span></div>`;
   bids.forEach((b,i)=>{
     const isWon=b.status==='낙찰', isBest=i===0&&!awarded;
-    const dispName=b.company_name||('업체 '+String.fromCharCode(65+i));
+    const dispName=esc(b.company_name||('업체 '+String.fromCharCode(65+i)));
     let action='';
     if(awarded){ action= isWon?'<div class="won">✔ 선택한 업체입니다</div>':''; }
     else if(pendingBid===b.id){
@@ -123,9 +124,9 @@ function render(){
       ${isBest?'<span class="rank">최저가</span>':''}
       <div class="name">${dispName} ${b.rating?`<span style="color:var(--gold);font-size:12px;font-weight:800">${stars(b.rating)}</span>`:''}</div>
       <div class="price">${won(b.amount)}</div>
-      <div class="meta"><span>⏱ 공사기간 ${b.duration||'협의'}</span></div>
-      ${b.scope_note?`<div class="note"><b>범위</b> · ${b.scope_note}</div>`:''}
-      ${b.memo?`<div class="note">${b.memo}</div>`:''}
+      <div class="meta"><span>⏱ 공사기간 ${esc(b.duration)||'협의'}</span></div>
+      ${b.scope_note?`<div class="note"><b>범위</b> · ${esc(b.scope_note)}</div>`:''}
+      ${b.memo?`<div class="note">${esc(b.memo)}</div>`:''}
       ${action}
     </div>`;
   });
@@ -136,7 +137,7 @@ function render(){
 }
 async function award(bidId){
   const {error}=await sb.rpc('customer_award',{p_token:token,p_bid_id:bidId});
-  if(error){toast('선택 실패: '+error.message);return}
+  if(error){console.warn('customer_award error:',error);toast('선택에 실패했습니다. 잠시 후 다시 시도해주세요.');return}
   pendingBid=null; toast('업체가 선택되었습니다'); await load();
 }
 load();

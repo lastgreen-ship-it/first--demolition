@@ -371,7 +371,7 @@ function mountDocForm(host, opts){
 }
 function renderDocSubmit(){
   const v=q('#viewWait'); v.style.display='';
-  const note = ME.status==='보완요청' && ME.review_note ? `<div class="reviewbox"><b>⚠ 서류 보완이 필요합니다</b><br>${ME.review_note}</div>` : '';
+  const note = ME.status==='보완요청' && ME.review_note ? `<div class="reviewbox"><b>⚠ 서류 보완이 필요합니다</b><br>${esc(ME.review_note)}</div>` : '';
   v.innerHTML=`<div style="max-width:560px;margin:0 auto">
     <div class="notice" style="text-align:left;padding:22px 22px 8px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:6px"><div class="ic" style="width:46px;height:46px;background:#eef2ff;color:var(--blue);margin:0;font-size:22px">📄</div><div><h2 style="margin:0;font-size:18px">시공사 증빙 서류 제출</h2><p style="margin:2px 0 0">최종 승인을 위해 아래 서류를 업로드해 주세요. <span style="color:var(--bad)">*</span> 표시는 필수입니다.</p></div></div></div>
     ${note}
@@ -432,20 +432,21 @@ function updateTiles(){
 function renderFeed(){ q('#feedbar').innerHTML='<span class="fdot"></span><b style="flex:none">최근 활동</b><span class="fscroll">'+FEED.join('　·　')+'</span>'; }
 function midPrice(e){if(e.price_low!=null&&e.price_high!=null)return (e.price_low+e.price_high)/2;if(e.price_low!=null)return e.price_low;const m=(e.price_text||'').match(/\d+/g);return m?(+m[0]):0;}
 function ddayBadge(e){if(!e.bid_deadline)return '';const d=Math.ceil((new Date(e.bid_deadline+'T23:59:59').getTime()-Date.now())/86400000);if(d<0)return '';return '<span class="dday '+(d<=2?'':'soon')+'">'+(d===0?'D-day':'D-'+d)+'</span>';}
+function esc(v){return v==null?'':String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function cardHtml(e,sample){
   const mine=e.my_bid;
   return `<div class="bcard ${sample?'sample':''}">
-    <div class="hd"><span class="rno">${e.receipt_no||'-'}${sample?'<span class="samplebadge">예시</span>':''}${ddayBadge(e)}</span><span class="tag">${sample?'예시':(e.created_at||'').slice(0,10)}</span></div>
+    <div class="hd"><span class="rno">${esc(e.receipt_no)||'-'}${sample?'<span class="samplebadge">예시</span>':''}${ddayBadge(e)}</span><span class="tag">${sample?'예시':esc((e.created_at||'').slice(0,10))}</span></div>
     <div class="kv">
-      <div class="k">업종</div><div class="v">${e.space||'-'}</div>
-      <div class="k">지역</div><div class="v">${e.address||'-'}</div>
-      <div class="k">평수</div><div class="v">${e.area||'-'}</div>
-      <div class="k">철거범위</div><div class="v">${scopeText(e.scope)}</div>
-      <div class="k">희망일정</div><div class="v">${e.schedule_date||'-'}</div>
-      <div class="k">현장난이도</div><div class="v">${e.difficulty||'-'} · 사진 ${e.photo_count||0}장</div>
+      <div class="k">업종</div><div class="v">${esc(e.space)||'-'}</div>
+      <div class="k">지역</div><div class="v">${esc(e.address)||'-'}</div>
+      <div class="k">평수</div><div class="v">${esc(e.area)||'-'}</div>
+      <div class="k">철거범위</div><div class="v">${esc(scopeText(e.scope))}</div>
+      <div class="k">희망일정</div><div class="v">${esc(e.schedule_date)||'-'}</div>
+      <div class="k">현장난이도</div><div class="v">${esc(e.difficulty)||'-'} · 사진 ${e.photo_count||0}장</div>
     </div>
-    <div class="est">AI 참고견적 ${e.price_text||'-'} · 완성도 ${e.completeness_score!=null?e.completeness_score+'%':'-'}</div>
-    ${mine?`<div class="mine">내 입찰: ${won(mine.amount)} · ${mine.status}</div>`:''}
+    <div class="est">AI 참고견적 ${esc(e.price_text)||'-'} · 완성도 ${e.completeness_score!=null?e.completeness_score+'%':'-'}</div>
+    ${mine?`<div class="mine">내 입찰: ${won(mine.amount)} · ${esc(mine.status)}</div>`:''}
     <div class="foot"><button class="bidbtn ${sample||mine?'re':''}" ${sample?'':`data-id="${e.id}"`}>${sample?'입찰하기(예시)':(mine?'입찰 수정':'입찰하기')}</button></div>
   </div>`;
 }
@@ -492,10 +493,10 @@ function openDocEdit(){
 function openProfileEdit(){
   const c=ME||{};
   q('#tabProfile').innerHTML=`<div class="bcard" style="max-width:520px">
-    <label class="f">업체명 *</label><input id="epCompany" value="${(c.company_name||'').replace(/"/g,'&quot;')}">
-    <div class="row2" style="margin-top:8px"><div><label class="f">사업자번호</label><input id="epBiz" value="${c.biz_no||''}"></div><div><label class="f">담당자</label><input id="epManager" value="${c.manager||''}"></div></div>
-    <label class="f" style="margin-top:8px">연락처</label><input id="epPhone" value="${c.phone||''}">
-    <label class="f" style="margin-top:8px">활동지역(쉼표)</label><input id="epRegions" value="${(c.regions||[]).join(', ')}">
+    <label class="f">업체명 *</label><input id="epCompany" value="${esc(c.company_name)}">
+    <div class="row2" style="margin-top:8px"><div><label class="f">사업자번호</label><input id="epBiz" value="${esc(c.biz_no)}"></div><div><label class="f">담당자</label><input id="epManager" value="${esc(c.manager)}"></div></div>
+    <label class="f" style="margin-top:8px">연락처</label><input id="epPhone" value="${esc(c.phone)}">
+    <label class="f" style="margin-top:8px">활동지역(쉼표)</label><input id="epRegions" value="${esc((c.regions||[]).join(', '))}">
     <div style="display:flex;gap:8px;margin-top:16px"><button class="gbtn" id="epSave" style="background:var(--blue);flex:1">저장</button><button class="gbtn" id="epCancel" style="background:#eef1f6;color:var(--ink);flex:0 0 90px">취소</button></div>
   </div>`;
   qa('#tabProfile input').forEach(i=>{i.style.width='100%';i.style.border='1px solid var(--line)';i.style.borderRadius='9px';i.style.padding='9px 10px';i.style.font='inherit'});
@@ -602,14 +603,14 @@ function renderMine(){
   q('#mineGrid').innerHTML=list.map(o=>{
     const b=o.bid,e=o.estimate;
     return `<div class="bcard">
-      <div class="hd"><span class="rno">${e.receipt_no||'-'}</span><span class="badge b-${b.status}">${b.status}</span></div>
+      <div class="hd"><span class="rno">${esc(e.receipt_no)||'-'}</span><span class="badge b-${b.status}">${esc(b.status)}</span></div>
       <div class="kv">
-        <div class="k">업종·지역</div><div class="v">${e.space||'-'} · ${e.address||'-'}</div>
-        <div class="k">평수·범위</div><div class="v">${e.area||'-'} · ${scopeText(e.scope)}</div>
+        <div class="k">업종·지역</div><div class="v">${esc(e.space)||'-'} · ${esc(e.address)||'-'}</div>
+        <div class="k">평수·범위</div><div class="v">${esc(e.area)||'-'} · ${esc(scopeText(e.scope))}</div>
         <div class="k">내 입찰가</div><div class="v" style="color:var(--navy);font-weight:800">${won(b.amount)}</div>
-        <div class="k">공사기간</div><div class="v">${b.duration||'-'}</div>
+        <div class="k">공사기간</div><div class="v">${esc(b.duration)||'-'}</div>
       </div>
-      ${b.status==='낙찰'?`<div class="won"><b>🎉 낙찰되었습니다!</b><br>고객: ${e.name||'-'} / ${e.phone||'-'}</div><div class="checklist"><div class="ci"><span class="cn">1</span>고객에게 연락</div><div class="ci"><span class="cn">2</span>현장 방문·실측</div><div class="ci"><span class="cn">3</span>계약 체결</div><div class="ci"><span class="cn">4</span>시공 진행</div></div>`:''}
+      ${b.status==='낙찰'?`<div class="won"><b>🎉 낙찰되었습니다!</b><br>고객: ${esc(e.name)||'-'} / ${esc(e.phone)||'-'}</div><div class="checklist"><div class="ci"><span class="cn">1</span>고객에게 연락</div><div class="ci"><span class="cn">2</span>현장 방문·실측</div><div class="ci"><span class="cn">3</span>계약 체결</div><div class="ci"><span class="cn">4</span>시공 진행</div></div>`:''}
     </div>`;
   }).join('');
 }
