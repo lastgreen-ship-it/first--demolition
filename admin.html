@@ -457,6 +457,8 @@ const STAT=['신규','상담중','계약','실패','보류'];
 const statColor=s=>({'신규':'#2767ff','상담중':'#ef9f25','계약':'#10a878','실패':'#e25555','보류':'#9aa5b5'}[s]||'#888');
 const SRC_LABEL={organic:'자연유입',meta_ad:'메타광고',ad:'광고',referral:'외부유입',manual:'수기등록',meta_lead:'메타 리드','인스타 광고':'메타 리드','인스타광고':'메타 리드'};
 function esc(v){return v==null?'':String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+/* 메타 리드는 접수번호가 폼ID로 전부 동일 → 화면에서만 UUID 기반 고유 꼬리표를 붙여 리드를 구분 (표시 전용, DB/Zap 미변경) */
+function rcptDisp(r){const rn=(r&&r.receipt_no)||'-';if(typeof rn==='string'&&rn.indexOf('ML-')===0&&r&&r.id){return rn+'·'+String(r.id).replace(/-/g,'').slice(-4).toUpperCase();}return rn;}
 function srcLabel(s){return SRC_LABEL[s]||s||'-'}
 /* 접수번호 앞자리로 유입 보정: ML- = 메타 리드(리드폼)로 강제, FC- 등 홈페이지 접수는 원래 source 사용 */
 function effSource(r){return (r&&typeof r.receipt_no==='string'&&r.receipt_no.slice(0,3)==='ML-')?'meta_lead':((r&&r.source)||'organic')}
@@ -591,7 +593,7 @@ function render(){
     <tr class="${isToday(r)?'today ':''}${st==='신규'?'unread':''}">
       <td><input type="checkbox" class="rowchk" data-chk="${r.id}" ${selected.has(String(r.id))?'checked':''}></td>
       <td><button class="star ${r.pinned?'on':''}" data-star="${r.id}">${r.pinned?'★':'☆'}</button></td>
-      <td class="rno">${st==='신규'?'<span class="udot" title="미확인 신규"></span>':''}${esc(r.receipt_no)||'-'}${isToday(r)?'<span class="newtag">NEW</span>':''}</td>
+      <td class="rno">${st==='신규'?'<span class="udot" title="미확인 신규"></span>':''}${esc(rcptDisp(r))||'-'}${isToday(r)?'<span class="newtag">NEW</span>':''}</td>
       <td>${dtShort(r.created_at)}</td>
       <td class="lft">${esc(r.space)||'-'}<br><span style="color:var(--muted)">${esc(r.address)}</span><br>${srcBadge(r)}${tags?` ${tags}`:''}</td>
       <td>${esc(r.area)||'-'}<br><span style="color:var(--muted);font-size:11px">${esc(scopeText(r.scope))}</span></td>
@@ -654,7 +656,7 @@ function csvExport(rows,label){
 function kv(o){return Object.entries(o).map(([k,v])=>`<div class="k">${k}</div><div class="v">${v||'-'}</div>`).join('')}
 function openDetail(id){
   const r=DATA.find(x=>String(x.id)===String(id)); if(!r)return; cur=r;
-  q('#mTitle').textContent=`신청 상세 · ${r.receipt_no||''}`;
+  q('#mTitle').textContent=`신청 상세 · ${rcptDisp(r)}`;
   q('#kvBasic').innerHTML=kv({'업종':esc(r.space),'지역':esc((r.address||'')+' '+(r.detail||'')),'평수':esc(r.area),'철거범위':esc(scopeText(r.scope)),'희망일정':esc(r.schedule_date),'지원금 상담':r.support?'신청':'미신청','접수일시':dtShort(r.created_at)});
   q('#kvSurvey').innerHTML=kv({'천장':esc([r.ceiling_type,r.ceiling_height,r.ceiling_steel,r.ceiling_equip].filter(Boolean).join(' / ')),'바닥':esc([r.floor_type,r.floor_work,r.floor_fixed].filter(Boolean).join(' / ')),'폐기물':esc(r.waste),'접근·반출':esc([r.floor_no,r.elevator,r.vehicle,r.restriction].filter(Boolean).join(' / '))});
   q('#mPrice').textContent=priceText(r);
@@ -750,7 +752,7 @@ function renderSchedule(){
       <div class="hd"><span>${fmtDate(d)}${tag}</span><span class="cnt">${rows.length}건</span></div>
       <div style="overflow:auto"><table class="tbl"><tbody>
       ${rows.map(r=>`<tr>
-        <td class="rno">${esc(r.receipt_no)||'-'}</td>
+        <td class="rno">${esc(rcptDisp(r))||'-'}</td>
         <td class="lft">${esc(r.space)||'-'} · ${esc(r.address)}</td>
         <td>${esc(r.name)||'-'}</td>
         <td>${fmtPhone(r.phone)}</td>
