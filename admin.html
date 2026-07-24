@@ -456,13 +456,15 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const q=s=>document.querySelector(s),qa=s=>[...document.querySelectorAll(s)];
 const STAT=['신규','상담중','계약','실패','보류'];
 const statColor=s=>({'신규':'#2767ff','상담중':'#ef9f25','계약':'#10a878','실패':'#e25555','보류':'#9aa5b5'}[s]||'#888');
-const SRC_LABEL={organic:'자연유입',meta_ad:'메타광고',ad:'광고',referral:'외부유입',manual:'수기등록',meta_lead:'리드광고','인스타 광고':'리드광고','인스타광고':'리드광고'};
+const SRC_LABEL={organic:'자연유입',meta_ad:'메타광고',ad:'광고',referral:'외부유입',manual:'수기등록',meta_lead:'메타 리드','인스타 광고':'메타 리드','인스타광고':'메타 리드'};
 function srcLabel(s){return SRC_LABEL[s]||s||'-'}
+/* 접수번호 앞자리로 유입 보정: ML- = 메타 리드(리드폼)로 강제, FC- 등 홈페이지 접수는 원래 source 사용 */
+function effSource(r){return (r&&typeof r.receipt_no==='string'&&r.receipt_no.slice(0,3)==='ML-')?'meta_lead':((r&&r.source)||'organic')}
 function srcColor(s){return ({meta_ad:'#2767ff',meta_lead:'#7c5cff','인스타 광고':'#7c5cff','인스타광고':'#7c5cff',ad:'#2767ff',referral:'#0d2d5d',manual:'#9aa5b5',organic:'#8a94a6'})[s]||'#8a94a6'}
 /* ── 전화번호 형식 정규화: +82 → 0, 하이픈 표기 ── */
 function telKR(p){let d=(p||'').replace(/[^0-9+]/g,'');if(d.indexOf('+82')===0)d='0'+d.slice(3);else if(d.indexOf('82')===0&&d.length>=11)d='0'+d.slice(2);return d.replace(/[^0-9]/g,'');}
 function fmtPhone(p){if(!p)return '-';const d=telKR(p);if(/^01[016789]\d{7,8}$/.test(d))return d.length===11?d.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3'):d.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3');if(/^02\d{7,8}$/.test(d))return d.length===10?d.replace(/(\d{2})(\d{4})(\d{4})/,'$1-$2-$3'):d.replace(/(\d{2})(\d{3})(\d{4})/,'$1-$2-$3');if(/^0\d{9,10}$/.test(d))return d.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-$2-$3');return d||p;}
-function srcBadge(r){const s=r.source||'organic';const c=srcColor(s);const lt=r.lead_type==='lead'?' ·리드':'';return `<span class="srcb" style="background:${c}1a;color:${c};border:1px solid ${c}55">${srcLabel(s)}${lt}</span>`}
+function srcBadge(r){const s=effSource(r);const c=srcColor(s);const lt=r.lead_type==='lead'?' ·리드':'';return `<span class="srcb" style="background:${c}1a;color:${c};border:1px solid ${c}55">${srcLabel(s)}${lt}</span>`}
 let DATA=[], filt={job:'전체',stat:'전체',period:'전체',region:'전체',assignee:'전체',price:'전체',comp:'전체',bidst:'전체',support:'전체',scope:'전체',tag:'전체',source:'전체'}, page=1, cur=null; const PER=8;
 let selected=new Set();
 function weekStartStr(){const d=new Date();const off=(d.getDay()+6)%7;d.setDate(d.getDate()-off);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
@@ -544,7 +546,7 @@ function match(r){
   if(filt.support!=='전체'&&(r.support?'신청':'미신청')!==filt.support)return false;
   if(filt.scope!=='전체'&&!(Array.isArray(r.scope)&&r.scope.includes(filt.scope)))return false;
   if(filt.tag!=='전체'&&!((r.tags||[]).includes(filt.tag)))return false;
-  if(filt.source!=='전체'&&(r.source||'organic')!==filt.source)return false;
+  if(filt.source!=='전체'&&effSource(r)!==filt.source)return false;
   const n=q('#qN').value.trim(),p=q('#qP').value.trim(),a=q('#qA').value.trim();
   if(n&&!(r.name||'').includes(n))return false;
   if(p){const pn=p.replace(/[^0-9]/g,'');if(!(r.phone||'').includes(p)&&!(pn&&telKR(r.phone).includes(pn)))return false;}
@@ -570,7 +572,7 @@ function initChips(){
   chipRow('#fSupport',['신청','미신청'],'support');
   chipRow('#fScope',distinct(r=>r.scope),'scope');
   chipRow('#fTag',distinct(r=>r.tags),'tag');
-  chipRow('#fSource',distinct(r=>r.source||'organic'),'source',srcLabel);
+  chipRow('#fSource',distinct(r=>effSource(r)),'source',srcLabel);
 }
 q('#advToggle').onclick=()=>{const a=q('#advFilters');const open=a.style.display!=='none';a.style.display=open?'none':'grid';q('#advToggle').textContent=(open?'＋':'－')+' 상세필터';};
 let lastFiltered=[];
@@ -642,7 +644,7 @@ q('#bulkApply').onclick=async()=>{
   initChips(); render(); toast(ids.length+'건 일괄 변경됨');
 };
 function csvExport(rows,label){
-  const cols=[['접수번호',r=>r.receipt_no],['접수일시',r=>dtShort(r.created_at)],['업종',r=>r.space],['지역',r=>r.address],['평수',r=>r.area],['철거범위',r=>scopeText(r.scope)],['이름',r=>r.name],['연락처',r=>r.phone],['AI견적',r=>priceText(r)],['완성도',r=>r.completeness_score],['담당자',r=>r.assignee],['상담예정',r=>r.consult_date],['진행상태',r=>r.status||'신규'],['유입경로',r=>srcLabel(r.source||'organic')],['리드유형',r=>r.lead_type||'full'],['캠페인',r=>r.utm_campaign],['UTM매체',r=>r.utm_source],['마케팅동의',r=>r.consent_marketing?'Y':'N'],['태그',r=>(r.tags||[]).join(' ')],['메모',r=>r.memo]];
+  const cols=[['접수번호',r=>r.receipt_no],['접수일시',r=>dtShort(r.created_at)],['업종',r=>r.space],['지역',r=>r.address],['평수',r=>r.area],['철거범위',r=>scopeText(r.scope)],['이름',r=>r.name],['연락처',r=>r.phone],['AI견적',r=>priceText(r)],['완성도',r=>r.completeness_score],['담당자',r=>r.assignee],['상담예정',r=>r.consult_date],['진행상태',r=>r.status||'신규'],['유입경로',r=>srcLabel(effSource(r))],['리드유형',r=>r.lead_type||'full'],['캠페인',r=>r.utm_campaign],['UTM매체',r=>r.utm_source],['마케팅동의',r=>r.consent_marketing?'Y':'N'],['태그',r=>(r.tags||[]).join(' ')],['메모',r=>r.memo]];
   const esc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
   let csv='﻿'+cols.map(c=>c[0]).join(',')+'\n'; rows.forEach(r=>{csv+=cols.map(c=>esc(c[1](r))).join(',')+'\n'});
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='퍼스트철거_신청'+(label?'_'+label:'')+'_'+todayStr()+'.csv';a.click();
@@ -656,7 +658,7 @@ function openDetail(id){
   q('#mPrice').textContent=priceText(r);
   q('#kvEst').innerHTML=kv({'견적 완성도':(r.completeness_score!=null?r.completeness_score+'%':'-'),'공사기간':r.duration,'난이도':r.difficulty,'사진 수':(r.photo_count!=null?r.photo_count+'장':'-'),'변동요인':r.risks});
   const campaign=[r.utm_campaign,r.utm_content].filter(Boolean).join(' / ');
-  q('#kvContact').innerHTML=kv({'이름':r.name,'연락처':r.phone?`<a href="tel:${telKR(r.phone)}" style="color:var(--blue);text-decoration:none">${fmtPhone(r.phone)}</a>`:'-','개인정보 동의':r.agree?'Y':'N','마케팅 수신동의':r.consent_marketing?'Y':'N','유입경로':srcLabel(r.source||'organic')+(r.lead_type==='lead'?' (리드)':''),'캠페인':campaign||'-','UTM 매체':r.utm_source?`${r.utm_source}${r.utm_medium?' / '+r.utm_medium:''}`:'-','유입 URL':r.landing_url||'-'});
+  q('#kvContact').innerHTML=kv({'이름':r.name,'연락처':r.phone?`<a href="tel:${telKR(r.phone)}" style="color:var(--blue);text-decoration:none">${fmtPhone(r.phone)}</a>`:'-','개인정보 동의':r.agree?'Y':'N','마케팅 수신동의':r.consent_marketing?'Y':'N','유입경로':srcLabel(effSource(r))+(r.lead_type==='lead'?' (리드)':''),'캠페인':campaign||'-','UTM 매체':r.utm_source?`${r.utm_source}${r.utm_medium?' / '+r.utm_medium:''}`:'-','유입 URL':r.landing_url||'-'});
   q('#mStatus').value=r.status||'신규'; q('#mAssignee').value=r.assignee||''; q('#mDate').value=r.consult_date||''; q('#mMemo').value=r.memo||''; q('#mTags').value=(r.tags||[]).join(', ');
   q('#mActPrice').value=r.actual_price??''; q('#mActWaste').value=r.actual_waste||''; q('#mActDays').value=r.actual_days||''; q('#mActNote').value=r.actual_note||'';
   loadPhotos(r);
@@ -797,7 +799,7 @@ function renderStats(){
   const re=Object.entries(reg).sort((a,b)=>b[1]-a[1]).slice(0,8),rmax=Math.max(1,...re.map(x=>x[1]));
   q('#chRegion').innerHTML=re.length?re.map(([g,n])=>bar(g,n,rmax,'#ef9f25')).join(''):'<div class="empty">데이터 없음</div>';
   // 유입경로별 (계약 수 병기)
-  const src={};DATA.forEach(r=>{const s=r.source||'organic';src[s]=src[s]||{n:0,d:0};src[s].n++;if(r.status==='계약')src[s].d++});
+  const src={};DATA.forEach(r=>{const s=effSource(r);src[s]=src[s]||{n:0,d:0};src[s].n++;if(r.status==='계약')src[s].d++});
   const se=Object.entries(src).sort((a,b)=>b[1].n-a[1].n),smx=Math.max(1,...se.map(x=>x[1].n));
   q('#chSource').innerHTML=se.length?se.map(([s,o])=>bar(`${srcLabel(s)} <span style="color:var(--muted);font-weight:600">(계약 ${o.d})</span>`,o.n,smx,srcColor(s))).join(''):'<div class="empty">데이터 없음</div>';
 }
