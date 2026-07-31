@@ -362,6 +362,13 @@ tr.today td{background:#fffdf3}
       <div class="mcol">
         <h4>AI 예상견적</h4><div class="priceBig" id="mPrice">-</div><div class="kv" id="kvEst"></div>
         <h4>연락처 / 처리</h4><div class="kv" id="kvContact"></div>
+        <div id="smsBox" style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:2px 0 12px;background:#fbfcfe">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <div style="font-weight:800;font-size:13px;color:var(--navy)">📩 접수 완료 문자<span id="smsState" style="font-weight:700;font-size:12px;margin-left:6px"></span></div>
+            <button class="det" id="mSms" type="button" style="padding:6px 12px;font-size:12.5px">문자 발송</button>
+          </div>
+          <div id="smsMeta" style="font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.5"></div>
+        </div>
         <div class="mfield"><label>진행상태</label><select id="mStatus"><option>신규</option><option>상담중</option><option>계약</option><option>실패</option><option>보류</option></select></div>
         <div class="mfield"><label>담당자</label><input id="mAssignee" placeholder="담당자 이름" list="assigneeList"></div>
         <div class="mfield"><label>상담 예정일</label><input type="date" id="mDate"></div>
@@ -598,7 +605,7 @@ function render(){
       <td class="lft">${esc(r.space)||'-'}<br><span style="color:var(--muted)">${esc(r.address)}</span><br>${srcBadge(r)}${tags?` ${tags}`:''}</td>
       <td>${esc(r.area)||'-'}<br><span style="color:var(--muted);font-size:11px">${esc(scopeText(r.scope))}</span></td>
       <td>${esc(r.name)||'-'}</td>
-      <td>${r.phone?`<a href="tel:${tel}" style="color:var(--navy);text-decoration:none">${ph}</a> <button class="cpy" data-copy="${tel}">복사</button>`:'-'}</td>
+      <td>${r.phone?`<a href="tel:${tel}" style="color:var(--navy);text-decoration:none">${ph}</a> <button class="cpy" data-copy="${tel}">복사</button>`:'-'}${r.sms_status==='발송'?' <span title="접수 완료 문자 발송됨" style="font-size:11px">📩</span>':r.sms_status==='실패'?' <span title="접수 문자 발송 실패" style="font-size:11px;color:#e25555">📩!</span>':''}</td>
       <td class="price">${priceText(r)}</td>
       <td style="font-weight:800;color:${c>=80?'#10a878':c>=70?'#ef9f25':'#e25555'}">${c!=null?c+'%':'-'}</td>
       <td>${r.assignee?esc(r.assignee):'<span style="color:#b8c2d4">-</span>'}</td>
@@ -654,6 +661,8 @@ function csvExport(rows,label){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='퍼스트철거_신청'+(label?'_'+label:'')+'_'+todayStr()+'.csv';a.click();
 }
 function kv(o){return Object.entries(o).map(([k,v])=>`<div class="k">${k}</div><div class="v">${v||'-'}</div>`).join('')}
+function smsBadge(r){const s=r&&r.sms_status;if(s==='발송')return {t:'발송됨',c:'#10a878'};if(s==='실패')return {t:'실패',c:'#e25555'};if(s==='제외'||s==='skip')return {t:'발송 제외',c:'#8a94a6'};return {t:'미발송',c:'#e0812a'};}
+function renderSms(r){const b=smsBadge(r);const st=q('#smsState');if(st){st.textContent=' · '+b.t;st.style.color=b.c;}const parts=[];if(r.sms_sent_at)parts.push('발송: '+dtShort(r.sms_sent_at));if(r.sms_error)parts.push('오류: '+esc(r.sms_error));const meta=q('#smsMeta');if(meta)meta.innerHTML=parts.join(' · ')||'접수 시 자동 발송(발신번호·API 설정 후 활성화). 필요 시 수동 발송하세요.';const btn=q('#mSms');if(btn)btn.textContent=(r.sms_status==='발송')?'재발송':'문자 발송';}
 function openDetail(id){
   const r=DATA.find(x=>String(x.id)===String(id)); if(!r)return; cur=r;
   q('#mTitle').textContent=`신청 상세 · ${rcptDisp(r)}`;
@@ -665,7 +674,7 @@ function openDetail(id){
   q('#kvContact').innerHTML=kv({'이름':esc(r.name),'연락처':r.phone?`<a href="tel:${telKR(r.phone)}" style="color:var(--blue);text-decoration:none">${fmtPhone(r.phone)}</a>`:'-','개인정보 동의':r.agree?'Y':'N','마케팅 수신동의':r.consent_marketing?'Y':'N','유입경로':srcLabel(effSource(r))+(r.lead_type==='lead'?' (리드)':''),'캠페인':esc(campaign)||'-','UTM 매체':r.utm_source?`${esc(r.utm_source)}${r.utm_medium?' / '+esc(r.utm_medium):''}`:'-','유입 URL':esc(r.landing_url)||'-'});
   q('#mStatus').value=r.status||'신규'; q('#mAssignee').value=r.assignee||''; q('#mDate').value=r.consult_date||''; q('#mMemo').value=r.memo||''; q('#mTags').value=(r.tags||[]).join(', ');
   q('#mActPrice').value=r.actual_price??''; q('#mActWaste').value=r.actual_waste||''; q('#mActDays').value=r.actual_days||''; q('#mActNote').value=r.actual_note||'';
-  loadPhotos(r);
+  loadPhotos(r); renderSms(r);
   q('#mask').classList.add('open');
 }
 async function loadPhotos(r){
@@ -689,6 +698,21 @@ q('#mSave').onclick=async()=>{
   btn.disabled=false; btn.textContent='저장';
   if(error){toast('저장 실패: '+error.message);return}
   Object.assign(cur,upd); q('#mask').classList.remove('open'); initChips(); render(); toast('저장되었습니다');
+};
+/* 접수 완료 문자 수동 발송 — 두 번 눌러 확인(브라우저 확인창 미사용). Edge Function notify-lead-sms 호출 */
+let __smsArm=false, __smsTimer=null;
+q('#mSms').onclick=async()=>{
+  if(!cur)return; const btn=q('#mSms');
+  if(!__smsArm){__smsArm=true;btn.textContent='한 번 더 눌러 발송';btn.style.background='#e25555';btn.style.color='#fff';clearTimeout(__smsTimer);__smsTimer=setTimeout(()=>{__smsArm=false;renderSms(cur);btn.style.background='';btn.style.color='';},3000);return;}
+  __smsArm=false;clearTimeout(__smsTimer);btn.style.background='';btn.style.color='';btn.disabled=true;btn.textContent='발송 중…';
+  try{
+    const {error}=await sb.functions.invoke('notify-lead-sms',{body:{id:cur.id,manual:true}});
+    if(error)throw error;
+    toast('문자 발송을 요청했습니다');
+    const {data:rr}=await sb.from('estimates').select('sms_status,sms_sent_at,sms_error').eq('id',cur.id).single();
+    if(rr){Object.assign(cur,rr);}
+  }catch(e){console.warn('sms invoke:',e);toast('문자 기능은 발신번호·API 설정 후 활성화됩니다');}
+  finally{btn.disabled=false;renderSms(cur);}
 };
 /* ── 신규 신청 등록(수기) ── */
 q('#btnAdd').onclick=()=>{
