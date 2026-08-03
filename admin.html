@@ -214,6 +214,7 @@ tr.today td{background:#fffdf3}
           <div class="frow"><div class="lab">기간</div><div id="fPeriod"></div></div>
           <div class="frow"><div class="lab">업종</div><div id="fJob"></div></div>
           <div class="frow"><div class="lab">진행상태</div><div id="fStat"></div></div>
+          <div class="frow"><div class="lab">신청상태</div><div id="fStage"></div></div>
           <div class="frow"><div class="lab" id="advToggle">＋ 상세필터</div><div id="advHint" style="font-size:11px;color:var(--muted)"></div></div>
           <div id="advFilters" style="display:none;grid-column:1/-1;gap:8px">
             <div class="frow"><div class="lab">지역</div><div id="fRegion"></div></div>
@@ -494,7 +495,7 @@ function srcColor(s){return ({meta_ad:'#2767ff',meta_lead:'#7c5cff','인스타 �
 function telKR(p){let d=(p||'').replace(/[^0-9+]/g,'');if(d.indexOf('+82')===0)d='0'+d.slice(3);else if(d.indexOf('82')===0&&d.length>=11)d='0'+d.slice(2);return d.replace(/[^0-9]/g,'');}
 function fmtPhone(p){if(!p)return '-';const d=telKR(p);if(/^01[016789]\d{7,8}$/.test(d))return d.length===11?d.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3'):d.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3');if(/^02\d{7,8}$/.test(d))return d.length===10?d.replace(/(\d{2})(\d{4})(\d{4})/,'$1-$2-$3'):d.replace(/(\d{2})(\d{3})(\d{4})/,'$1-$2-$3');if(/^0\d{9,10}$/.test(d))return d.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-$2-$3');return d||p;}
 function srcBadge(r){const s=effSource(r);const c=srcColor(s);const lt=r.lead_type==='lead'?' ·리드':'';return `<span class="srcb" style="background:${c}1a;color:${c};border:1px solid ${c}55">${srcLabel(s)}${lt}</span>`}
-let DATA=[], filt={job:'전체',stat:'전체',period:'전체',region:'전체',assignee:'전체',price:'전체',comp:'전체',bidst:'전체',support:'전체',scope:'전체',tag:'전체',source:'전체',sms:'전체'}, page=1, cur=null; const PER=20;
+let DATA=[], filt={job:'전체',stat:'전체',period:'전체',region:'전체',assignee:'전체',price:'전체',comp:'전체',bidst:'전체',support:'전체',scope:'전체',tag:'전체',source:'전체',sms:'전체',stage:'전체'}, page=1, cur=null; const PER=20;
 let selected=new Set();
 let SMS_CFG={enabled:false,subject:'[퍼스트 철거 접수 완료]',body:''};
 function smsStatOf(r){return r&&r.sms_status?r.sms_status:'미발송';}
@@ -565,6 +566,7 @@ function dtShort(s){if(!s)return '';s=String(s);if(s.indexOf('T')===-1)return s.
 function match(r){
   if(filt.job!=='전체'&&r.space!==filt.job)return false;
   if(filt.stat!=='전체'&&(r.status||'신규')!==filt.stat)return false;
+  if(filt.stage!=='전체'){const done=!!(r.address&&String(r.address).trim());if(filt.stage==='완료(주소O)'&&!done)return false;if(filt.stage==='이탈(주소X)'&&done)return false;}
   const day=kstDate(r.created_at);
   if(filt.period!=='전체'){
     if(filt.period==='오늘'&&day!==todayStr())return false;
@@ -598,6 +600,7 @@ function initChips(){
   chipRow('#fPeriod',['오늘','이번주','이번달'],'period');
   chipRow('#fJob',['카페·음식점','사무실','학원','병원·미용','일반상가','기타'],'job');
   chipRow('#fStat',STAT,'stat');
+  chipRow('#fStage',['완료(주소O)','이탈(주소X)'],'stage');
   chipRow('#fRegion',distinct(regionOf),'region');
   chipRow('#fAssignee',['미배정',...distinct(r=>r.assignee)],'assignee');
   chipRow('#fPrice',['~200만','200~400만','400~600만','600만+'],'price');
@@ -624,7 +627,7 @@ function render(){
     <tr class="${isToday(r)?'today ':''}${st==='신규'?'unread':''}">
       <td><input type="checkbox" class="rowchk" data-chk="${r.id}" ${selected.has(String(r.id))?'checked':''}></td>
       <td><button class="star ${r.pinned?'on':''}" data-star="${r.id}">${r.pinned?'★':'☆'}</button></td>
-      <td class="rno">${st==='신규'?'<span class="udot" title="미확인 신규"></span>':''}${esc(rcptDisp(r))||'-'}${isToday(r)?'<span class="newtag">NEW</span>':''}</td>
+      <td class="rno">${st==='신규'?'<span class="udot" title="미확인 신규"></span>':''}${esc(rcptDisp(r))||'-'}${isToday(r)?'<span class="newtag">NEW</span>':''}${!(r.address&&String(r.address).trim())?'<span class="newtag" style="background:#e25555" title="주소 미입력 · 견적만 보고 이탈한 리드 (전화로 상담 가능)">이탈</span>':''}</td>
       <td>${dtShort(r.created_at)}</td>
       <td class="lft">${esc(r.space)||'-'}<br><span style="color:var(--muted)">${esc(r.address)}</span><br>${srcBadge(r)}${tags?` ${tags}`:''}</td>
       <td>${esc(r.area)||'-'}<br><span style="color:var(--muted);font-size:11px">${esc(scopeText(r.scope))}</span></td>
