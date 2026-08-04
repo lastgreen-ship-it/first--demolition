@@ -554,6 +554,7 @@ async function loadData(){
 q('#btnRefresh').onclick=loadData;
 let sortKey=null, sortDir=-1;
 function priceNum(r){if(r.price_low!=null)return r.price_low;const m=(r.price_text||'').match(/\d+/g);return m?+m[0]:0}
+function isEstLead(r){return !!(r&&(r.price_low!=null||r.completeness_score!=null||(r.space&&String(r.space).trim())||(r.area&&String(r.area).trim())));}
 function isToday(r){return kstDate(r.created_at)===todayStr()}
 function dDay(ds){if(!ds)return null;const t=new Date(todayStr()+'T00:00:00'),d=new Date(ds+'T00:00:00');return Math.round((d-t)/86400000)}
 function sortVal(r){return sortKey==='price'?priceNum(r):(sortKey==='completeness_score'?(r.completeness_score||0):(r.created_at||''));}
@@ -566,7 +567,7 @@ function dtShort(s){if(!s)return '';s=String(s);if(s.indexOf('T')===-1)return s.
 function match(r){
   if(filt.job!=='전체'&&r.space!==filt.job)return false;
   if(filt.stat!=='전체'&&(r.status||'신규')!==filt.stat)return false;
-  if(filt.stage!=='전체'){const done=!!(r.address&&String(r.address).trim());if(filt.stage==='완료(주소O)'&&!done)return false;if(filt.stage==='이탈(주소X)'&&done)return false;}
+  if(filt.stage!=='전체'){if(!isEstLead(r))return false;const done=!!(r.address&&String(r.address).trim());if(filt.stage==='완료(주소O)'&&!done)return false;if(filt.stage==='이탈(주소X)'&&done)return false;}
   const day=kstDate(r.created_at);
   if(filt.period!=='전체'){
     if(filt.period==='오늘'&&day!==todayStr())return false;
@@ -627,7 +628,7 @@ function render(){
     <tr class="${isToday(r)?'today ':''}${st==='신규'?'unread':''}">
       <td><input type="checkbox" class="rowchk" data-chk="${r.id}" ${selected.has(String(r.id))?'checked':''}></td>
       <td><button class="star ${r.pinned?'on':''}" data-star="${r.id}">${r.pinned?'★':'☆'}</button></td>
-      <td class="rno">${st==='신규'?'<span class="udot" title="미확인 신규"></span>':''}${esc(rcptDisp(r))||'-'}${isToday(r)?'<span class="newtag">NEW</span>':''}${!(r.address&&String(r.address).trim())?'<span class="newtag" style="background:#e25555" title="주소 미입력 · 견적만 보고 이탈한 리드 (전화로 상담 가능)">이탈</span>':''}</td>
+      <td class="rno">${st==='신규'?'<span class="udot" title="미확인 신규"></span>':''}${esc(rcptDisp(r))||'-'}${isToday(r)?'<span class="newtag">NEW</span>':''}${(isEstLead(r)&&!(r.address&&String(r.address).trim()))?'<span class="newtag" style="background:#e25555" title="주소 미입력 · 견적만 보고 이탈한 리드 (전화로 상담 가능)">이탈</span>':''}</td>
       <td>${dtShort(r.created_at)}</td>
       <td class="lft">${esc(r.space)||'-'}<br><span style="color:var(--muted)">${esc(r.address)}</span><br>${srcBadge(r)}${tags?` ${tags}`:''}</td>
       <td>${esc(r.area)||'-'}<br><span style="color:var(--muted);font-size:11px">${esc(scopeText(r.scope))}</span></td>
