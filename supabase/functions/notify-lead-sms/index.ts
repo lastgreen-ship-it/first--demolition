@@ -11,9 +11,8 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ── 문자 문구 (여기만 고치면 됨. {name} = 신청자 이름) ─────────────
-const WELCOME_TEXT = (_name: string) =>
-  `[퍼스트 철거 접수 완료]
+// 폴백 문구 (DMS 문자설정이 비어있을 때만 사용). 평소엔 settings.body 를 씀.
+const DEFAULT_BODY = `[퍼스트 철거 접수 완료]
 
 안녕하세요, 고객님.
 철거·원상복구 전문기업 퍼스트 철거(First Demolition)입니다.
@@ -113,8 +112,17 @@ Deno.serve(async (req) => {
     }
     if (!row) return json({ ok: false, error: "no target row" }, 400);
 
+    // DMS 문자설정(settings.value: {enabled, subject, body})을 단일 소스로 읽음
+    let cfg: any = {};
+    try {
+      const { data } = await sb.from("settings").select("value").eq("key", "sms").single();
+      cfg = (data && data.value) || {};
+    } catch (_e) { /* 설정 없으면 기본값 사용 */ }
+
     // ── 자동 발송 조건 (수동이면 무조건 발송) ──
     if (!manual) {
+      // DMS 토글이 명시적으로 꺼져있으면 자동발송 안 함
+      if (cfg.enabled === false) return json({ ok: true, skipped: "auto-send-disabled" });
       // 이미 보냈으면 스킵 (중복 방지)
       if (row.sms_status === "발송") return json({ ok: true, skipped: "already-sent" });
       // 메타리드는 즉시 발송, 견적폼 리드는 '주소 채워진(완료)' 건만 발송
@@ -126,7 +134,8 @@ Deno.serve(async (req) => {
     const to = normPhone(row.phone);
     if (to.length < 10) return json({ ok: false, error: "invalid phone" }, 400);
 
-    const r = await sendSms(to, WELCOME_TEXT(row.name));
+    const text = (cfg.body && String(cfg.body).trim()) ? String(cfg.body) : DEFAULT_BODY;
+    const r = await sendSms(to, text);
     const now = new Date().toISOString();
     await sb.from("estimates").update(
       r.ok
