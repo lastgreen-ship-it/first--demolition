@@ -249,7 +249,7 @@ tr.today td{background:#fffdf3}
         <div style="overflow:auto">
         <table class="tbl">
           <thead><tr>
-            <th><input type="checkbox" id="checkAll" title="현재 목록 전체 선택"></th><th></th><th>접수번호</th><th class="sortable" data-sort="created_at">접수일시<span class="arr"></span></th><th class="lft">업종 · 지역</th><th>평수 · 범위</th><th>이름</th><th>연락처</th><th class="sortable" data-sort="price">AI 예상견적<span class="arr"></span></th><th class="sortable" data-sort="completeness_score">완성도<span class="arr"></span></th><th>담당자</th><th>상담예정</th><th>진행상태</th><th></th>
+            <th><input type="checkbox" id="checkAll" title="현재 목록 전체 선택"></th><th></th><th title="접수 순번(오래된 순서 = 1번)">순번</th><th>접수번호</th><th class="sortable" data-sort="created_at">접수일시<span class="arr"></span></th><th class="lft">업종 · 지역</th><th>평수 · 범위</th><th>이름</th><th>연락처</th><th class="sortable" data-sort="price">AI 예상견적<span class="arr"></span></th><th class="sortable" data-sort="completeness_score">완성도<span class="arr"></span></th><th>담당자</th><th>상담예정</th><th>진행상태</th><th></th>
           </tr></thead>
           <tbody id="rows"></tbody>
         </table>
@@ -548,7 +548,7 @@ q('#btnLogout').onclick=async()=>{await sb.auth.signOut();location.reload()};
 async function loadData(){
   q('#cnt').textContent='불러오는 중…';
   const {data,error}=await sb.from('estimates').select('*').order('created_at',{ascending:false});
-  if(error){q('#cnt').textContent='조회 오류';q('#rows').innerHTML=`<tr><td colspan="14" class="empty">조회 실패: ${error.message}<br><span style="font-size:11px">(로그인/권한을 확인하세요)</span></td></tr>`;return}
+  if(error){q('#cnt').textContent='조회 오류';q('#rows').innerHTML=`<tr><td colspan="15" class="empty">조회 실패: ${error.message}<br><span style="font-size:11px">(로그인/권한을 확인하세요)</span></td></tr>`;return}
   DATA=data||[]; page=1; initChips(); render();
 }
 q('#btnRefresh').onclick=loadData;
@@ -617,6 +617,7 @@ q('#advToggle').onclick=()=>{const a=q('#advFilters');const open=a.style.display
 let lastFiltered=[];
 function activeFilterCount(){return ['region','assignee','price','comp','bidst','support','scope','tag','source'].filter(k=>filt[k]!=='전체').length}
 function render(){
+  const _seq={}; [...DATA].sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||''))).forEach((r,i)=>{_seq[r.id]=i+1;});
   let list=DATA.filter(match);
   list.sort((a,b)=>{const pa=a.pinned?1:0,pb=b.pinned?1:0;if(pa!==pb)return pb-pa;if(sortKey){const va=sortVal(a),vb=sortVal(b);if(va<vb)return sortDir;if(va>vb)return -sortDir;}return 0;});
   lastFiltered=list;
@@ -628,6 +629,7 @@ function render(){
     <tr class="${isToday(r)?'today ':''}${st==='신규'?'unread':''}">
       <td><input type="checkbox" class="rowchk" data-chk="${r.id}" ${selected.has(String(r.id))?'checked':''}></td>
       <td><button class="star ${r.pinned?'on':''}" data-star="${r.id}">${r.pinned?'★':'☆'}</button></td>
+      <td style="color:#8a94a6;font-weight:800;text-align:center">${_seq[r.id]||''}</td>
       <td class="rno">${st==='신규'?'<span class="udot" title="미확인 신규"></span>':''}${esc(rcptDisp(r))||'-'}${isToday(r)?'<span class="newtag">NEW</span>':''}${(isEstLead(r)&&!(r.address&&String(r.address).trim()))?'<span class="newtag" style="background:#e25555" title="주소 미입력 · 견적만 보고 이탈한 리드 (전화로 상담 가능)">이탈</span>':''}</td>
       <td>${dtShort(r.created_at)}</td>
       <td class="lft">${esc(r.space)||'-'}<br><span style="color:var(--muted)">${esc(r.address)}</span><br>${srcBadge(r)}${tags?` ${tags}`:''}</td>
@@ -640,7 +642,7 @@ function render(){
       <td>${r.consult_date?esc(r.consult_date):'<span style="color:#b8c2d4">-</span>'}</td>
       <td><span class="badge b-${st}">${st}</span></td>
       <td><button class="det" data-id="${r.id}">상세</button></td>
-    </tr>`}).join('') : `<tr><td colspan="14" class="empty">조건에 맞는 신청이 없습니다.</td></tr>`;
+    </tr>`}).join('') : `<tr><td colspan="15" class="empty">조건에 맞는 신청이 없습니다.</td></tr>`;
   q('#rows').querySelectorAll('.det').forEach(b=>b.onclick=()=>openDetail(b.dataset.id));
   q('#rows').querySelectorAll('.star').forEach(b=>b.onclick=async(ev)=>{ev.stopPropagation();const r=DATA.find(x=>String(x.id)===String(b.dataset.star));if(!r)return;const nv=!r.pinned;const {error}=await sb.from('estimates').update({pinned:nv}).eq('id',r.id);if(error){toast('실패: '+error.message);return}r.pinned=nv;render();});
   q('#rows').querySelectorAll('.cpy').forEach(b=>b.onclick=(ev)=>{ev.stopPropagation();try{navigator.clipboard.writeText(b.dataset.copy)}catch(e){}toast('복사됨: '+b.dataset.copy)});
