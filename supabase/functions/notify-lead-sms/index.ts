@@ -134,7 +134,10 @@ Deno.serve(async (req) => {
     const to = normPhone(row.phone);
     if (to.length < 10) return json({ ok: false, error: "invalid phone" }, 400);
 
-    const text = (cfg.body && String(cfg.body).trim()) ? String(cfg.body) : DEFAULT_BODY;
+    // 발송 문구 우선순위: 요청(payload.text) > DMS 설정(cfg.body) > 폴백
+    const text = (payload.text && String(payload.text).trim())
+      ? String(payload.text)
+      : ((cfg.body && String(cfg.body).trim()) ? String(cfg.body) : DEFAULT_BODY);
     const r = await sendSms(to, text);
     const now = new Date().toISOString();
     await sb.from("estimates").update(
