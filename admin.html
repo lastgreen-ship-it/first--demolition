@@ -191,6 +191,7 @@ tr.today td{background:#fffdf3}
       <div class="grp">신청관리</div>
       <a class="nav on" data-view="list"><span class="dot"></span>신청 목록</a>
       <a class="nav" data-view="schedule"><span class="dot"></span>상담 일정</a>
+      <a class="nav" data-view="sms"><span class="dot"></span>문자 관리</a>
       <div class="grp">현황 · 통계</div>
       <a class="nav" data-view="stats"><span class="dot"></span>월별 신청현황</a>
       <div class="grp">입찰 · 시공사</div>
@@ -351,6 +352,47 @@ tr.today td{background:#fffdf3}
           </table></div>
         </div>
       </section>
+      <!-- VIEW: 문자 관리 -->
+      <section id="view-sms" style="display:none">
+        <div class="panel" style="margin-bottom:16px">
+          <div class="phead"><h2>문자 템플릿 <span id="tplCnt" style="color:var(--muted);font-size:13px;font-weight:600"></span></h2><div class="out"><button class="refresh" id="btnTplNew">＋ 새 템플릿</button></div></div>
+          <div id="tplList" style="padding:14px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px"></div>
+        </div>
+        <div class="panel">
+          <div class="phead"><h2>문자 발송 <span style="color:var(--muted);font-size:13px;font-weight:600">· 선택한 대상에게 즉시 발송</span></h2></div>
+          <div style="padding:14px 18px;display:grid;gap:14px">
+            <div class="frow" style="gap:14px;flex-wrap:wrap;align-items:center">
+              <div class="lab">대상</div>
+              <label style="cursor:pointer"><input type="radio" name="sTarget" value="unsent" checked> 미발송만</label>
+              <label style="cursor:pointer"><input type="radio" name="sTarget" value="all"> 전체</label>
+              <span style="color:#c3d0e6">|</span>
+              <label>유입 <select id="sSrc" class="select" style="width:auto;padding:4px 8px"><option value="all">전체</option><option value="meta">메타(인스타)</option><option value="form">견적폼</option></select></label>
+              <button class="refresh" id="btnTgtReload">목록 새로고침</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <label style="font-weight:800;cursor:pointer"><input type="checkbox" id="sCheckAll"> 전체선택</label>
+              <span id="sTgtCnt" style="color:var(--muted);font-size:12px"></span>
+            </div>
+            <div id="sTgtList" style="max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:10px"></div>
+            <div class="frow" style="gap:10px;align-items:center"><div class="lab">템플릿</div><select id="sTpl" class="select" style="width:auto;min-width:220px"></select></div>
+            <div id="sPrev" style="white-space:pre-wrap;background:#f8fafd;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12.5px;color:#41506b;min-height:40px">템플릿을 선택하세요.</div>
+            <div><button id="btnCampSend" class="save" style="padding:12px 22px">선택 0건에게 즉시 발송</button> <span id="campHint" style="color:var(--muted);font-size:12px;margin-left:8px"></span></div>
+          </div>
+        </div>
+      </section>
+      <!-- 템플릿 편집 모달 -->
+      <div class="mask" id="tplMask">
+        <div class="modal" style="width:min(560px,100%)">
+          <div class="mhead"><h3 id="tplTitle">문자 템플릿</h3><button class="x" id="tplClose">×</button></div>
+          <div style="padding:18px">
+            <div class="mfield"><label>템플릿 이름</label><input id="tplName" placeholder="예: 접수완료 안내"></div>
+            <div class="mfield"><label>제목 (LMS 타이틀)</label><input id="tplSubject" placeholder="[퍼스트 철거 접수 완료]"></div>
+            <div class="mfield"><label>문자 내용 <span id="tplLen" style="color:var(--muted);font-weight:600"></span></label><textarea id="tplBody" style="height:180px" placeholder="문자 내용을 입력하세요"></textarea></div>
+            <div style="font-size:11.5px;color:var(--muted)">※ 90바이트 초과 시 자동 LMS. 문자엔 굵게(별표) 표시가 안 됩니다.</div>
+          </div>
+          <div class="mfoot"><button id="tplDelete" style="border:0;border-radius:9px;padding:10px 16px;font-weight:800;cursor:pointer;background:#fbeaea;color:#c0392b">삭제</button><button class="save" id="tplSave">저장</button></div>
+        </div>
+      </div>
     </main>
   </div>
 </div>
@@ -526,6 +568,8 @@ function switchView(name){
   q('#view-stats').style.display=name==='stats'?'':'none';
   q('#view-bids').style.display=name==='bids'?'':'none';
   q('#view-contractors').style.display=name==='contractors'?'':'none';
+  q('#view-sms').style.display=name==='sms'?'':'none';
+  if(name==='sms')renderSmsMgr();
   if(name==='schedule')renderSchedule();
   if(name==='stats')renderStats();
   if(name==='bids'){loadBidsAdmin();loadContractors();}
@@ -754,6 +798,33 @@ q('#smsCfgMask').onclick=e=>{if(e.target===q('#smsCfgMask'))q('#smsCfgMask').cla
 q('#cfgBody').addEventListener('input',updCfgLen);
 q('#cfgSave').onclick=async()=>{const val={enabled:q('#cfgEnabled').checked,subject:q('#cfgSubject').value.trim(),body:q('#cfgBody').value};const btn=q('#cfgSave');btn.disabled=true;btn.textContent='저장 중…';const {error}=await sb.from('settings').upsert({key:'sms',value:val,updated_at:new Date().toISOString()});btn.disabled=false;btn.textContent='저장';if(error){toast('저장 실패: '+error.message);return}SMS_CFG=Object.assign(SMS_CFG,val);q('#smsCfgMask').classList.remove('open');toast('문자 설정 저장됨 · 자동발송 '+(val.enabled?'ON':'OFF'));};
 q('#bulkSms').onclick=async()=>{const ids=[...selected];if(!ids.length){toast('선택된 건이 없습니다');return}const btn=q('#bulkSms');if(!btn.dataset.arm){btn.dataset.arm='1';btn.textContent='한 번 더 눌러 '+ids.length+'건 발송';btn.style.background='#e25555';btn.style.color='#fff';setTimeout(()=>{delete btn.dataset.arm;btn.textContent='📩 문자발송';btn.style.background='';btn.style.color='';},3000);return}delete btn.dataset.arm;btn.style.background='';btn.style.color='';btn.disabled=true;btn.textContent='발송 중…';let ok=0,fail=0;for(const id of ids){try{const {error}=await sb.functions.invoke('notify-lead-sms',{body:{id,manual:true}});if(error)throw error;ok++;}catch(e){fail++;}}btn.disabled=false;btn.textContent='📩 문자발송';await loadData();toast('문자 요청: 성공 '+ok+' · 실패 '+fail+(fail?' (발신번호·API 설정 확인)':''));};
+/* ── 문자 관리 (템플릿 + 즉시발송) ── */
+let SMS_TPLS=[], _editTpl=null, campSel=new Set();
+function tplBytes(s){try{return new Blob([s||'']).size}catch(e){return (s||'').length}}
+function _dig(p){return (p||'').replace(/\D/g,'')}
+function _isTestLead(r){return /FC-TEST/i.test(r.receipt_no||'')||/^test$/i.test((r.name||'').trim())||/테스트|zapier|curl|__|유입경로/i.test(r.name||'')||['01055556666','821085528778'].includes(_dig(r.phone))}
+async function loadTemplates(){try{const {data,error}=await sb.from('sms_templates').select('*').order('sort',{ascending:true}).order('created_at',{ascending:true});if(error)throw error;SMS_TPLS=data||[];}catch(e){SMS_TPLS=[];toast('템플릿 불러오기 실패: '+(e.message||e.details||e.hint||JSON.stringify(e)));}renderTplList();fillTplSelect();}
+function renderTplList(){const host=q('#tplList');if(!host)return;q('#tplCnt').textContent='총 '+SMS_TPLS.length+'개';host.innerHTML=SMS_TPLS.length?SMS_TPLS.map(t=>`<div class="tile" style="cursor:pointer" data-tpl="${t.id}"><small style="color:var(--blue);font-weight:800">${esc(t.name)||'(이름없음)'}</small><div style="font-size:12px;color:#41506b;margin-top:6px;max-height:56px;overflow:hidden;white-space:pre-wrap">${esc((t.body||'').slice(0,80))}${(t.body||'').length>80?'…':''}</div><div style="margin-top:8px;font-size:11px;color:var(--muted)">${tplBytes(t.body)}바이트 · 클릭해 수정</div></div>`).join(''):'<div style="color:#b8c2d4;padding:6px">템플릿이 없습니다. "＋ 새 템플릿"으로 추가하세요.</div>';host.querySelectorAll('[data-tpl]').forEach(c=>c.onclick=()=>openTpl(SMS_TPLS.find(t=>String(t.id)===c.dataset.tpl)));}
+function fillTplSelect(){const sel=q('#sTpl');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">— 템플릿 선택 —</option>'+SMS_TPLS.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');if(cur)sel.value=cur;updatePrev();}
+function updTplLen(){const b=tplBytes(q('#tplBody').value);q('#tplLen').textContent='· '+b+'바이트 ('+(b<=90?'SMS':'LMS')+')';}
+function openTpl(t){_editTpl=t||null;q('#tplTitle').textContent=t?'템플릿 수정':'새 템플릿';q('#tplName').value=t?t.name||'':'';q('#tplSubject').value=t?t.subject||'':'';q('#tplBody').value=t?t.body||'':'';q('#tplDelete').style.display=t?'':'none';updTplLen();q('#tplMask').classList.add('open');}
+q('#btnTplNew').onclick=()=>openTpl(null);
+q('#tplClose').onclick=()=>q('#tplMask').classList.remove('open');
+q('#tplMask').onclick=e=>{if(e.target===q('#tplMask'))q('#tplMask').classList.remove('open')};
+q('#tplBody').addEventListener('input',updTplLen);
+q('#tplSave').onclick=async()=>{const name=q('#tplName').value.trim();if(!name)return toast('템플릿 이름을 입력하세요');const body=q('#tplBody').value;if(!body.trim())return toast('문자 내용을 입력하세요');const rec={name,subject:q('#tplSubject').value.trim(),body};const btn=q('#tplSave');btn.disabled=true;btn.textContent='저장 중…';try{const {error}=_editTpl?await sb.from('sms_templates').update(rec).eq('id',_editTpl.id):await sb.from('sms_templates').insert(rec);if(error)throw error;q('#tplMask').classList.remove('open');await loadTemplates();toast('저장되었습니다');}catch(e){toast('저장 실패: '+(e.message||e.details||e.hint||JSON.stringify(e)));}btn.disabled=false;btn.textContent='저장';};
+q('#tplDelete').onclick=async()=>{if(!_editTpl)return;const btn=q('#tplDelete');if(!btn.dataset.arm){btn.dataset.arm='1';btn.textContent='한번 더 눌러 삭제';setTimeout(()=>{if(btn.dataset.arm){delete btn.dataset.arm;btn.textContent='삭제';}},3000);return;}delete btn.dataset.arm;btn.textContent='삭제';try{const {error}=await sb.from('sms_templates').delete().eq('id',_editTpl.id);if(error)throw error;q('#tplMask').classList.remove('open');await loadTemplates();toast('삭제되었습니다');}catch(e){toast('삭제 실패: '+(e.message||e.details||e.hint||JSON.stringify(e)));}};
+function campaignTargets(){const mode=(document.querySelector('input[name=sTarget]:checked')||{}).value||'unsent';const src=q('#sSrc')?q('#sSrc').value:'all';return DATA.filter(r=>{if(mode==='unsent'&&(r.sms_status||'미발송')==='발송')return false;const meta=/^ML-/.test(r.receipt_no||'')||r.source==='meta_ad'||/메타|인스타/.test(r.source||'');if(src==='meta'&&!meta)return false;if(src==='form'&&meta)return false;return _dig(r.phone).length>=10;}).sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));}
+function renderTargets(){const rows=campaignTargets();const host=q('#sTgtList');if(!host)return;host.innerHTML=rows.length?rows.map(r=>{const test=_isTestLead(r);const id=String(r.id);return `<label style="display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid #eef2f7;${test?'opacity:.55':''}"><input type="checkbox" class="ctgt" data-id="${id}" ${campSel.has(id)?'checked':''}><span style="min-width:92px;font-size:11px;color:var(--muted)">${dtShort(r.created_at)}</span><span style="min-width:90px">${esc(r.name)||'(무명)'}</span><span style="color:var(--muted)">${_dig(r.phone)}</span>${test?'<span class="newtag" style="background:#8a94a6">테스트?</span>':''}${(r.sms_status==='발송')?'<span style="color:#10a878;font-size:11px">✔발송됨</span>':''}</label>`}).join(''):'<div style="padding:12px;color:#b8c2d4">대상이 없습니다.</div>';host.querySelectorAll('.ctgt').forEach(cb=>cb.onclick=()=>{if(cb.checked)campSel.add(cb.dataset.id);else campSel.delete(cb.dataset.id);updCampCnt();});updCampCnt();}
+function updCampCnt(){const n=campaignTargets().length;q('#sTgtCnt').textContent='대상 '+n+'건 · 선택 '+campSel.size+'건';q('#btnCampSend').textContent='선택 '+campSel.size+'건에게 즉시 발송';}
+function updatePrev(){const t=SMS_TPLS.find(x=>String(x.id)===(q('#sTpl')?q('#sTpl').value:''));q('#sPrev').textContent=t?(t.body||''):'템플릿을 선택하세요.';}
+function renderSmsMgr(){loadTemplates();campSel.clear();renderTargets();}
+q('#sTpl').addEventListener('change',updatePrev);
+qa('input[name=sTarget]').forEach(r=>r.addEventListener('change',()=>{campSel.clear();renderTargets();}));
+q('#sSrc').addEventListener('change',()=>{campSel.clear();renderTargets();});
+q('#btnTgtReload').onclick=async()=>{await loadData();campSel.clear();renderTargets();};
+q('#sCheckAll').onclick=e=>{const rows=campaignTargets();if(e.target.checked)rows.forEach(r=>campSel.add(String(r.id)));else campSel.clear();renderTargets();};
+q('#btnCampSend').onclick=async()=>{const tpl=SMS_TPLS.find(x=>String(x.id)===q('#sTpl').value);if(!tpl)return toast('템플릿을 선택하세요');if(!campSel.size)return toast('발송할 대상을 선택하세요');const btn=q('#btnCampSend');if(!btn.dataset.arm){btn.dataset.arm='1';btn.dataset.txt=btn.textContent;btn.textContent='한 번 더 눌러 '+campSel.size+'건 발송';btn.style.background='#e25555';setTimeout(()=>{if(btn.dataset.arm){delete btn.dataset.arm;btn.style.background='';btn.textContent=btn.dataset.txt;}},3000);return;}delete btn.dataset.arm;btn.style.background='';btn.disabled=true;const ids=[...campSel];let ok=0,fail=0;for(const id of ids){try{const {error}=await sb.functions.invoke('notify-lead-sms',{body:{id,manual:true,text:tpl.body}});if(error)throw error;ok++;}catch(e){fail++;}q('#campHint').textContent='발송 중… '+(ok+fail)+'/'+ids.length;}btn.disabled=false;campSel.clear();await loadData();renderTargets();q('#campHint').textContent='완료: 성공 '+ok+' · 실패 '+fail;toast('발송 완료 · 성공 '+ok+' · 실패 '+fail);};
 /* ── 신규 신청 등록(수기) ── */
 q('#btnAdd').onclick=()=>{
   ['aAddress','aDetail','aScope','aName','aPhone','aPrice','aAssignee','aDate','aTags','aMemo'].forEach(id=>q('#'+id).value='');
