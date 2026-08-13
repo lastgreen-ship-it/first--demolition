@@ -77,6 +77,15 @@
 .mphotos a{display:block;aspect-ratio:1;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#f5f8fc}
 .mphotos img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
 .mphotos .none{grid-column:1/-1;color:#b8c2d4;font-size:12px;padding:10px 0}
+.lb-mask{position:fixed;inset:0;background:rgba(10,15,25,.93);z-index:9999;display:none;align-items:center;justify-content:center}
+.lb-mask.open{display:flex}
+.lb-img{max-width:92vw;max-height:86vh;object-fit:contain;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.55)}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:54px;height:54px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;font-size:30px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.lb-nav:hover{background:rgba(255,255,255,.32)}
+.lb-prev{left:24px}.lb-next{right:24px}
+.lb-close{position:absolute;top:20px;right:24px;width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;font-size:20px;cursor:pointer}
+.lb-close:hover{background:rgba(255,255,255,.32)}
+.lb-count{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;font-weight:700;background:rgba(0,0,0,.45);padding:6px 16px;border-radius:20px}
 #advToggle{cursor:pointer;color:var(--blue);font-weight:800;user-select:none}
 .bulkbar{display:none;padding:10px 18px;background:#eef4ff;border-bottom:1px solid var(--line);align-items:center;gap:8px;flex-wrap:wrap}
 .bulkbar.on{display:flex}
@@ -758,8 +767,28 @@ async function loadPhotos(r){
   host.innerHTML='<div class="none">사진 불러오는 중…</div>';
   const items=[];
   for(const p of paths){const {data,error}=await sb.storage.from('estimate-photos').createSignedUrl(p,600);if(!error&&data)items.push(data.signedUrl);}
-  host.innerHTML=items.length?items.map(u=>`<a href="${u}" target="_blank"><img src="${u}" alt="현장 사진"></a>`).join(''):'<div class="none">사진을 불러올 수 없습니다.</div>';
+  PHOTO_URLS=items;
+  host.innerHTML=items.length?items.map((u,i)=>`<a data-lb="${i}" title="클릭해 크게 보기"><img src="${u}" alt="현장 사진"></a>`).join(''):'<div class="none">사진을 불러올 수 없습니다.</div>';
+  host.querySelectorAll('[data-lb]').forEach(a=>a.onclick=()=>openLightbox(+a.dataset.lb));
 }
+/* ── 현장사진 라이트박스(슬라이드) ── */
+let PHOTO_URLS=[], _lbIdx=0, _lbEl=null;
+function _lbBuild(){
+  if(_lbEl)return _lbEl;
+  const m=document.createElement('div');m.className='lb-mask';
+  m.innerHTML='<button class="lb-close" title="닫기(Esc)">✕</button><button class="lb-nav lb-prev" title="이전(←)">‹</button><img class="lb-img" alt="현장 사진"><button class="lb-nav lb-next" title="다음(→)">›</button><div class="lb-count"></div>';
+  document.body.appendChild(m);
+  m.querySelector('.lb-close').onclick=closeLightbox;
+  m.querySelector('.lb-prev').onclick=e=>{e.stopPropagation();lbStep(-1)};
+  m.querySelector('.lb-next').onclick=e=>{e.stopPropagation();lbStep(1)};
+  m.onclick=e=>{if(e.target===m)closeLightbox()};
+  _lbEl=m;return m;
+}
+function _lbShow(){const m=_lbBuild();m.querySelector('.lb-img').src=PHOTO_URLS[_lbIdx]||'';m.querySelector('.lb-count').textContent=(_lbIdx+1)+' / '+PHOTO_URLS.length;}
+function openLightbox(i){if(!PHOTO_URLS.length)return;_lbIdx=i||0;_lbBuild().classList.add('open');_lbShow();}
+function lbStep(d){if(!PHOTO_URLS.length)return;_lbIdx=(_lbIdx+d+PHOTO_URLS.length)%PHOTO_URLS.length;_lbShow();}
+function closeLightbox(){if(_lbEl)_lbEl.classList.remove('open');}
+document.addEventListener('keydown',e=>{if(!_lbEl||!_lbEl.classList.contains('open'))return;if(e.key==='Escape')closeLightbox();else if(e.key==='ArrowLeft')lbStep(-1);else if(e.key==='ArrowRight')lbStep(1);});
 q('#mClose').onclick=()=>q('#mask').classList.remove('open');
 q('#mask').onclick=e=>{if(e.target===q('#mask'))q('#mask').classList.remove('open')};
 q('#mSave').onclick=async()=>{
