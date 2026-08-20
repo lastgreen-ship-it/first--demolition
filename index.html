@@ -8,7 +8,7 @@
 <meta name="description" content="현장 사진과 정보를 보내면 예상 철거비 범위와 지원 대상 확인을 무료로 안내해드립니다. 상담 무료·계약 강요 없음.">
 <meta property="og:title" content="퍼스트철거 | 사진으로 받는 철거 예상견적·시공사 비교">
 <meta property="og:description" content="현장 사진과 정보를 보내면 예상 철거비 범위와 지원 대상 확인을 무료로 안내해드립니다.">
-<meta property="og:type" content="website">
+<meta property="og:type" content="website"><meta property="og:url" content="https://www.firstdemolition.kr/"><meta property="og:image" content="https://www.firstdemolition.kr/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#273039"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%232f7fb5'/%3E%3Ctext x='50' y='71' font-family='Arial,sans-serif' font-size='62' font-weight='bold' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
 <style>
 :root{--navy:#273039;--navy2:#33414d;--blue:#2f7fb5;--gold:#2f7fb5;--ink:#1e2732;--muted:#647082;--line:#dce4ec;--bg:#eef1f5;--card:#fff;--ok:#10a878;--warn:#ef9f25;--bad:#e25555;--shadow:0 24px 70px rgba(39,48,57,.16)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"IBM Plex Sans KR",Pretendard,"Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}button,input,select{font:inherit}button{cursor:pointer}.wrap{width:min(1160px,calc(100% - 28px));margin:auto}.header{position:sticky;top:0;z-index:50;background:rgba(39,48,57,.96);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)}.headerIn{height:68px;display:flex;align-items:center;justify-content:space-between;color:#fff}.brand{display:flex;align-items:center;gap:10px;font-weight:950;font-size:20px}.mark{width:40px;height:40px;border-radius:13px;background:linear-gradient(145deg,var(--gold),#6fa8d4);display:grid;place-items:center;color:#fff;font-weight:950}.headBtn{border:0;background:var(--gold);color:#fff;font-weight:950;border-radius:14px;padding:12px 16px}.topnav{display:flex;align-items:center;gap:6px}.topnav .tab{color:#c9d6ec;text-decoration:none;font-weight:800;font-size:15px;padding:9px 14px;border-radius:11px;transition:.15s}.topnav .tab:hover{color:#fff;background:rgba(255,255,255,.08)}.topnav .tab.active{color:#fff;background:rgba(255,255,255,.12)}@media(max-width:560px){.brand{font-size:16px}.topnav{gap:2px}.topnav .tab{padding:7px 9px;font-size:13px}.headBtn{padding:9px 11px;font-size:13px}}
@@ -31,7 +31,7 @@
 @media(max-width:560px){.mk{padding:42px 0}.flow4,.statGrid{grid-template-columns:1fr}.priceTbl{font-size:13px}.priceTbl th,.priceTbl td{padding:11px 10px}.foot .cols{grid-template-columns:1fr}.fab a{width:50px;height:50px;font-size:11px}}
 @media(max-width:900px){.heroGrid,.layout{grid-template-columns:1fr}.heroCard{order:2}.steps{grid-template-columns:1fr}.side{order:-1}.chips{grid-template-columns:repeat(2,1fr)}.photoGrid{grid-template-columns:repeat(3,1fr)}.resultGrid{grid-template-columns:repeat(2,1fr)}.mobileSticky{display:grid;grid-template-columns:1fr 1fr;position:fixed;left:0;right:0;bottom:0;z-index:70;padding:10px;background:rgba(255,255,255,.96);border-top:1px solid var(--line);gap:8px}.mobileSticky button{border:0;border-radius:13px;padding:14px;font-weight:950}.mobileSticky .m1{background:#e2edf6;color:var(--navy)}.mobileSticky .m2{background:var(--blue);color:#fff}}
 @media(max-width:560px){.hero{padding-top:38px}.hero h1{font-size:42px}.heroMetric{grid-template-columns:1fr}.metric.wide{grid-column:auto}.chips,.uploadActions,.surveyGrid,.resultGrid{grid-template-columns:1fr}.photoGrid{grid-template-columns:repeat(2,1fr)}.card,.side{padding:18px}.inputRow{grid-template-columns:1fr}.addressBtn{padding:14px}.nav{flex-direction:column}.back,.next{width:100%}}
-</style>
+.whyCard,.flowStep,.revCard{transition:transform .22s ease,box-shadow .22s ease}.whyCard:hover,.flowStep:hover,.revCard:hover{transform:translateY(-5px);box-shadow:0 22px 48px rgba(39,48,57,.15)}.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}.reveal.in{opacity:1;transform:none}@media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}.whyCard,.flowStep,.revCard{transition:none}}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -64,9 +64,9 @@
 <section class="mk" id="why"><div class="wrap">
   <div class="mkHead"><span class="tag">WHY 퍼스트철거</span><h2>철거·폐업, 왜 퍼스트철거일까요?</h2><p>사진 기반 예상견적부터 시공사 서류 심사, 지원금 상담까지. 소상공인의 마지막 정리를 깔끔하게 도와드립니다.</p></div>
   <div class="whyGrid">
-    <div class="whyCard"><div class="ic">🎯</div><h3>사진 기반 예상견적</h3><p>현장 사진과 정밀 설문을 분석해 입력 정보 기준의 예상 철거비 범위를 즉시 제공합니다. 막연한 눈대중 견적 대신 근거 있는 범위로 시작하세요.</p></div>
-    <div class="whyCard"><div class="ic">🛡️</div><h3>서류 심사 시공사 입찰</h3><p>사업자·철거면허 등 서류 심사·승인 절차를 거친 시공사가 입찰에 참여합니다. 여러 업체의 견적을 한눈에 비교하고 직접 선택하세요.</p></div>
-    <div class="whyCard"><div class="ic">💰</div><h3>폐업지원금 상담</h3><p>소상공인 폐업지원(점포 철거·원상복구) 제도 안내와 서류 준비를 도와드립니다. 지원 대상·금액·접수 여부는 공고와 심사 결과에 따라 달라질 수 있습니다.</p></div>
+    <div class="whyCard"><div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.2l1-1.5h5.6l1 1.5H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="13" cy="13" r="3.4"/></svg></div><h3>사진 기반 예상견적</h3><p>현장 사진과 정밀 설문을 분석해 입력 정보 기준의 예상 철거비 범위를 즉시 제공합니다. 막연한 눈대중 견적 대신 근거 있는 범위로 시작하세요.</p></div>
+    <div class="whyCard"><div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.6-3 7.7-7 9-4-1.3-7-4.4-7-9V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg></div><h3>서류 심사 시공사 입찰</h3><p>사업자·철거면허 등 서류 심사·승인 절차를 거친 시공사가 입찰에 참여합니다. 여러 업체의 견적을 한눈에 비교하고 직접 선택하세요.</p></div>
+    <div class="whyCard"><div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8.5 10l1.5 4 2-3 2 3 1.5-4M8 12.5h8"/></svg></div><h3>폐업지원금 상담</h3><p>소상공인 폐업지원(점포 철거·원상복구) 제도 안내와 서류 준비를 도와드립니다. 지원 대상·금액·접수 여부는 공고와 심사 결과에 따라 달라질 수 있습니다.</p></div>
   </div>
 </div></section>
 
@@ -111,9 +111,9 @@
 <section class="mk alt" id="review"><div class="wrap">
   <div class="mkHead"><span class="tag">이용 예시</span><h2>이렇게 활용할 수 있어요</h2><p>퍼스트철거를 이용하는 대표적인 상황 예시입니다. 실제 결과는 현장 상태에 따라 달라질 수 있습니다.</p></div>
   <div class="revGrid">
-    <div class="revCard"><div class="stars">☑ 예시</div><p>카페를 정리하며 철거비가 막막할 때 — 현장 사진 몇 장을 올려 예상 철거비 범위를 먼저 확인하고, 여러 업체의 입찰을 비교해 선택할 수 있습니다.</p><div class="who"><div class="av">☕</div><div><b>카페·음식점</b><small>인테리어·주방설비 정리</small></div></div></div>
-    <div class="revCard"><div class="stars">☑ 예시</div><p>사무실 원상복구 견적이 업체마다 다를 때 — 한 화면에서 조건을 통일해 비교하고, 폐업지원금 대상 여부 상담까지 함께 받을 수 있습니다.</p><div class="who"><div class="av">🏢</div><div><b>사무실</b><small>파티션·바닥·원상복구</small></div></div></div>
-    <div class="revCard"><div class="stars">☑ 예시</div><p>학원을 급하게 정리해야 할 때 — 온라인으로 신청하고 시공사 입찰을 비교해, 방문 없이도 일정과 금액을 조율해 나갈 수 있습니다.</p><div class="who"><div class="av">📚</div><div><b>학원·교습소</b><small>칸막이·조명·바닥재</small></div></div></div>
+    <div class="revCard"><div class="stars">☑ 예시</div><p>카페를 정리하며 철거비가 막막할 때 — 현장 사진 몇 장을 올려 예상 철거비 범위를 먼저 확인하고, 여러 업체의 입찰을 비교해 선택할 수 있습니다.</p><div class="who"><div class="av"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v4a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z"/><path d="M16 9h2.2a2 2 0 0 1 0 4H16"/><path d="M8 3.5v1.5M11 3.5v1.5"/></svg></div><div><b>카페·음식점</b><small>인테리어·주방설비 정리</small></div></div></div>
+    <div class="revCard"><div class="stars">☑ 예시</div><p>사무실 원상복구 견적이 업체마다 다를 때 — 한 화면에서 조건을 통일해 비교하고, 폐업지원금 대상 여부 상담까지 함께 받을 수 있습니다.</p><div class="who"><div class="av"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="1"/><path d="M9.5 7h1M13.5 7h1M9.5 11h1M13.5 11h1M9.5 15h1M13.5 15h1"/></svg></div><div><b>사무실</b><small>파티션·바닥·원상복구</small></div></div></div>
+    <div class="revCard"><div class="stars">☑ 예시</div><p>학원을 급하게 정리해야 할 때 — 온라인으로 신청하고 시공사 입찰을 비교해, 방문 없이도 일정과 금액을 조율해 나갈 수 있습니다.</p><div class="who"><div class="av"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H18v14H6.5A1.5 1.5 0 0 0 5 18.5z"/><path d="M5 18.5A1.5 1.5 0 0 1 6.5 17H18v4H6.5A1.5 1.5 0 0 1 5 19.5z"/></svg></div><div><b>학원·교습소</b><small>칸막이·조명·바닥재</small></div></div></div>
   </div>
 </div></section>
 
@@ -152,7 +152,7 @@
 <footer class="foot"><div class="wrap">
   <div class="cols">
     <div>
-      <div class="brand2"><div class="mark">F</div>퍼스트철거</div>
+      <div class="brand2"><div class="mark">F</div>퍼스트 <span style="color:#6fa8d4">철거</span></div>
       <p>철거·폐업 소상공인을 위한 사진 기반 예상견적 &amp; 시공사 비교 플랫폼.<br>근거 있는 견적 범위와 서류 심사 시공사로 마지막 정리를 깔끔하게.</p>
     </div>
     <div>
@@ -244,5 +244,5 @@ qa('#faqList .faqQ').forEach(btn=>btn.addEventListener('click',()=>{const it=btn
 const grid=els[0].closest('.statGrid');function check(){if(done)return;if(grid.getBoundingClientRect().top<innerHeight*0.85){run();window.removeEventListener('scroll',check);}}window.addEventListener('scroll',check,{passive:true});check();})();
 </script>
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-</body>
+<script>(function(){var s=document.querySelectorAll('.whyCard,.flowStep,.revCard,.mkHead,.supBox');s.forEach(function(e){e.classList.add('reveal')});if(!('IntersectionObserver' in window)){s.forEach(function(e){e.classList.add('in')});return}var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target)}})},{threshold:.1,rootMargin:'0px 0px -8% 0px'});s.forEach(function(e){io.observe(e)})})();</script></body>
 </html>
